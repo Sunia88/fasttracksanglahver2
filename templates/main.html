@@ -1,0 +1,66 @@
+{{define "title"}}
+<title>Halaman Utama</title>
+<script src="static/main.js"></script>
+<link rel="stylesheet" href="static/login.css">
+{{end}}
+
+{{define "body"}}
+<div class="container">
+  <div class="col-sm-2"></div>
+  <div class="col-sm-4">
+    <div class="panel panel-info">
+      <div class="panel-heading text-center">Input Data Pasien</div>
+      <div class="panel-body">
+        <form action="/searchCM" method="post" role="form">
+          <div class="form-group" id="form1">
+            <label for="nocm">No. CM:</label><br>
+            <input type="text" name="nocm" id="nocm" class="form-control">
+            <span id="datapasien"></span>
+            <!-- <input type="submit" value="Cari"> -->
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="panel panel-info">
+      <div class="panel-heading text-center">Tabel IKI</div>
+      <div class="panel-body">
+        <table class="table table-bordered table-responsive">
+          <tr>
+            <th class="bg-success">No.</th>
+            <th class="bg-success">Tanggal</th>
+            <th class="bg-success">IKI 1</th>
+            <th class="bg-success">IKI 2</th>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-2"></div>
+</div>
+
+<div class="container">
+  <div class="col-sm-2"></div>
+  <div class="col-sm-8">
+    <div class="panel panel-info">
+      <div class="panel-heading text-center">Daftar Pasien Bulan</div>
+      <div class="panel-body">
+        <table class="table table-bordered table-responsive">
+            <tr>
+              <th class="bg-success">No</th>
+              <th class="bg-success">Tanggal</th>
+              <th class="bg-success">No. CM</th>
+              <th class="bg-success">Nama Pasien</th>
+              <th class="bg-success">Diagnosis</th>
+              <th class="bg-success">IKI 1</th>
+              <th class="bg-success">IKI 2</th>
+            </tr>
+            <span id="daftarpasien"></span>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-2"></div>
+</div>
+{{end}}
