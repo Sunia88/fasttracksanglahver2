@@ -5,12 +5,11 @@ $(document).ready(function(){
 		var value = $("#nocm").val();
 		if (value == ""){
 			$("#datapasien").html("Masukkan No. CM");
-			nocm = "";
+			//nocm = "";
 		} else {
-			$("#datapasien").html("");
-			nocm = "";
-		}
-		
+			$("#datapasien").html("No. CM tidak lengkap");
+			//nocm = "";
+		} 
 	});
 	
 	$("#form1").on("keyup", "#nocm", function(){
@@ -19,15 +18,16 @@ $(document).ready(function(){
 		
 		if (value == ""){
 			$("#datapasien").html("Masukkan No. CM");
-			nocm = "";
+			//nocm = "";
 		} else if (value.length < 8){
 			$("#datapasien").html("No. CM tidak lengkap");
-			nocm = "";
+			//nocm = "";
 		} else {
-			$("#datapasien").html("Mantaf");
-			nocm = "";
+			$("#nocm").prop("disabled", true);
+			nocm = value;
 		}
 	})
+	
 	
 	
 	
