@@ -4,6 +4,11 @@ import (
 	"html/template"
     "net/http"
 	
+	"time"
+	
+	"appengine"
+	"appengine/datastore"
+	"appengine/user"
 
 
 )
@@ -21,10 +26,18 @@ func init() {
 
 }
 
-/*
+type Dokter struct {
+   Username     string
+   NamaLengkap  string
+   Email        string
+   Password     string
+   TglDaftar    time.Time
+}
+
 type DataPasien struct {
    NamaPasien   string
    NomorCM      string
+   TglDaftar    time.Time
 }
 
 type DaftarPasien struct {
@@ -36,14 +49,16 @@ type DaftarPasien struct {
    ShiftJaga    int
 }
 
-func tambahData(ctx context.Context) {
-   
+func tambahDataDokter(w http.ResponseWriter, r *http.Request) {
+   ctx := appengine.NewContext(r)
+
+   k := datastore.IncompleteKey(ctx, "Dokter", nil)   
 }
 
 func getCM(w http.ResponseWriter, r *http.Request){
    
 }
-*/
+
 
 func mainPage(w http.ResponseWriter, r *http.Request) {
     main, _ := template.ParseFiles("templates/base.html", "templates/main.html")
