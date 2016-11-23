@@ -1,7 +1,43 @@
 {{define "title"}}
-
+<title>Daftar Baru</title>
+<script src="static/registrasi.js"></script>
+<!--<link rel="stylesheet" href="static/login.css">-->
 {{end}}
 
 {{define "body"}}
+<div class="container">
+   <div class="col-sm-4"></div>
+   <div class="col-sm-4">
+      <div class="panel panel-info">
+	  <div class="panel-heading text-center">Masukkan Data Dokter</div>
+      <div class="panel-body">
+	  <form action="/tambahdatadokter" method="post">
+	  <div class="form-group">
+	     <label for="namalkp">Nama Lengkap:</label>
+		 <input type="text" name="namalengkap" id="namalkp" class="form-control">
+	  </div>
+	  <div class="form-group">
+	     <label for="usr">Username:</label>
+		 <input type="text" name="username" id="user" class="form-control">
+	  </div>
+	  <div class="form-group">
+	     <label for="email">Email:</label>
+		 <input type="text" name="email" id="email" class="form-control">
+	  </div>
+	  <div class="form-group">
+	     <label for="pass1">Password:</label>
+		 <input type="password" name="pwd1" id="pwd1" class="form-control">
+	  </div>
+	  <div class="form-group">
+	     <label for="pass2">Ulangi Password:</label>
+		 <input type="text" name="pwd2" id="pwd2" class="form-control">
+	  </div> 
+	  <button type="submit" class="btn btn-default">Tambahkan</button>
+	  </form>
+	  </div>
+	  </div>
+   </div>
+   <div class="col-sm-4"></div>
 
+</div>
 {{end}}
