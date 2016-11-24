@@ -8,7 +8,7 @@ import (
 
 	"appengine"
 	"appengine/datastore"
-//	"appengine/user"
+	"appengine/user"
 
 
 )
@@ -16,7 +16,9 @@ import (
 
 func init() {
     
-//  http.HandleFunc("/", mainPage)
+    http.HandleFunc("/", index)
+	http.HandleFunc("/mainpage", mainPage)
+	http.HandleFunc("/registrasi", lamanRegistrasi)
 	http.HandleFunc("/login", loginPage)
 //	http.HandleFunc("/getcm", getCM)
     http.HandleFunc("/tambahdokter", tambahDataDokter)
@@ -30,6 +32,11 @@ type Dokter struct {
    Email        string
    Password     string
    TglDaftar    time.Time
+}
+
+type CurrentUser struct {
+   Logout       string
+   NamaLengkap  string
 }
 /*
 type DataPasien struct {
@@ -49,22 +56,19 @@ type KunjunganPasien struct {
 }
 */
 
-
-/*
-//entity group fasttrack
-func parentKey(ctx context.Context) *datastore.Key{
-   ctx := appengine.NewContext(r *http.Request)
-   return datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-
+func renderTemplate(w http.ResponseWriter, tmpl string, p interface{}){
+   t, _ := template.ParseFiles("templates/base.html", "templates/"+tmpl+".html")
+   t.Execute(w, p)
 }
 
-
+/*
 //setiap KunjunganPasien akan ada data dokter yang merawat
 func dokterKey(ctx context.Context, username string) *datastore.Key {
    
    return datastore.NewKey(ctx, "Dokter", username, 0, parentKey)
    
 }
+
 
 //setiap KunjunganPasien akan disimpan dibawah DataPasien
 func pasienKey(ctx context.Context, noCM string) *datastore.Key {
@@ -75,6 +79,8 @@ func pasienKey(ctx context.Context, noCM string) *datastore.Key {
 }
 
 */
+
+
 func tambahDataDokter(w http.ResponseWriter, r *http.Request) {
 
    if r.Method != "POST" {
@@ -102,23 +108,66 @@ func tambahDataDokter(w http.ResponseWriter, r *http.Request) {
    
    http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
-/*
-func getCM
 
-func mainPage(w http.ResponseWriter, r *http.Request) {
+//func getCM
 
-    ctx := appengine.NewContext(r)
-	
-    main, _ := template.ParseFiles("templates/base.html", "templates/main.html")
-	main.Execute(w, nil)
+func index(w http.ResponseWriter, r *http.Request) {
+   if r.Method != "GET" {
+      http.Error(w, "GET requests only", http.StatusMethodNotAllowed)
+	  return
+   }
+   
+   if r.URL.Path != "/" {
+      http.NotFound(w, r)
+	  return
+   }
+   
+   ctx := appengine.NewContext(r)
+
+   
+   var login string
+   
+   if u := user.Current(ctx); u != nil {
+      http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
+	   
+   } else {
+      login, _ = user.LoginURL(ctx, "/mainpage")
+      http.Redirect(w, r, login, http.StatusSeeOther)
+      
+   }
+
 }
 
+func lamanRegistrasi(w http.ResponseWriter, r *http.Request) {
+   renderTemplate(w, "registrasi", nil)
 
-*/
+}
 
+func mainPage(w http.ResponseWriter, r *http.Request){
 
-func loginPage(w http.ResponseWriter, r *http.Request) {
-   login, _ := template.ParseFiles("templates/base.html", "templates/registrasi.html")
-   login.Execute(w, nil)
+      ctx := appengine.NewContext(r)
+      parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+      u := user.Current(ctx)	  
+	  logout, _ = user.LogoutURL(ctx, "/")
+	  email = u.Email
+	  
+	  cur := CurrentUser{}
+	  
+	  q := datastore.NewQuery("Dokter").Ancestor(parentKey).Filter("Email =", email).Project("NamaLengkap")
+	  
+	  res := q.Run(ctx)
+	  
+	  for {
+		 _, err := res.Next(&cur)
+		 if err == datastore.Done {
+		    break
+		 }
+	  }
+	  
+	  cur.Logout := logout
+   renderTemplate(w, "main", cur)
+}
 
+func loginPage(w http.ResponseWriter, r *http.Request){
+   renderTemplate(w, "login", nil)
 }
