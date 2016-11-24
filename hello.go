@@ -147,11 +147,14 @@ func mainPage(w http.ResponseWriter, r *http.Request){
 
       ctx := appengine.NewContext(r)
       parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+
+// Problem: entah kenapa logout dan email tidak terdefinisikan
+
       u := user.Current(ctx)	  
 	  logout, _ = user.LogoutURL(ctx, "/")
 	  email = u.Email
 	  
-	  cur := CurrentUser{}
+	  var cur *CurrentUser
 	  
 	  q := datastore.NewQuery("Dokter").Ancestor(parentKey).Filter("Email =", email).Project("NamaLengkap")
 	  
@@ -163,8 +166,8 @@ func mainPage(w http.ResponseWriter, r *http.Request){
 		    break
 		 }
 	  }
-	  
-	  cur.Logout := logout
+//Problem: cara menambahakan logout ke type CurrentUser	  
+	  cur.Logout = logout
    renderTemplate(w, "main", cur)
 }
 
