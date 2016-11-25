@@ -5,6 +5,15 @@
 {{end}}
 
 {{define "body"}}
+<div class="container">	
+   <div class="col-sm-4"></div>
+   <div class="col-sm-4">
+      <p>test</p>
+      <p>{{with .NamaLengkap}}Selamat Datang {{.}}{{end}}</p>
+	  <p>{{with .Logout}}<a href="{{.}}">Logout</a> {{end}}</p>
+   </div>
+   <div class="col-sm-4"></div>
+</div>
 <div class="container">
   <div class="col-sm-2"></div>
   <div class="col-sm-4">
