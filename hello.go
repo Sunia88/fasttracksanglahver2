@@ -34,11 +34,12 @@ type Dokter struct {
    TglDaftar    time.Time
 }
 
+/*
 type CurrentUser struct {
    Logout       string
    NamaLengkap  string
 }
-/*
+
 type DataPasien struct {
    NamaPasien   string
    NomorCM      string
@@ -145,21 +146,25 @@ func lamanRegistrasi(w http.ResponseWriter, r *http.Request) {
 
 func mainPage(w http.ResponseWriter, r *http.Request){
 
-      ctx := appengine.NewContext(r)
+      type person struct {
+	     NamaLengkap   string
+		 Logout        string
+	  }
+      //ctx := appengine.NewContext(r)
       //parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-	  
+	  /*
       var logout, email string
       u := user.Current(ctx)	  
 	  logout, _ = user.LogoutURL(ctx, "/")
 	  email = u.Email
-	  
-	  cur := struct {
-	     NamaLengkap, Logout, Email string
-		 }{
-	     NamaLengkap: email,
-	     Logout: logout,
+	  */
+	  cur := person{
+	     NamaLengkap: "I Wayan Surya Sedana",
+	     Logout: "logout",
 	  }
-	/*  
+
+   //Problem: cara menambahkan logout ke type CurrentUser	 
+	  /*  
 	  q := datastore.NewQuery("Dokter").Ancestor(parentKey).Filter("Email =", email).Project("NamaLengkap")
 	  
 	  res := q.Run(ctx)
@@ -170,7 +175,6 @@ func mainPage(w http.ResponseWriter, r *http.Request){
 		    break
 		 }
 	  }
-//Problem: cara menambahakan logout ke type CurrentUser	  
 	  cur.Logout = logout */
 	  
    renderTemplate(w, "main", cur)
