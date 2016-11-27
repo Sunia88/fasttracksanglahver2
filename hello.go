@@ -10,6 +10,7 @@ import (
 	"appengine/datastore"
 	"appengine/user"
 
+    "fmt"
 
 )
 
@@ -58,7 +59,7 @@ type KunjunganPasien struct {
 */
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p interface{}){
-   t, _ := template.ParseFiles("templates/base.html", "templates/"+tmpl+".html")
+   t, _ := template.ParseFiles("templates/"+tmpl+".html", "templates/base.html")
    t.Execute(w, p)
 }
 
@@ -158,7 +159,7 @@ func mainPage(w http.ResponseWriter, r *http.Request){
 	  logout, _ = user.LogoutURL(ctx, "/")
 	  email = u.Email
 	  */
-	  cur := person{
+	  cur := &person{
 	     NamaLengkap: "I Wayan Surya Sedana",
 	     Logout: "logout",
 	  }
@@ -177,7 +178,19 @@ func mainPage(w http.ResponseWriter, r *http.Request){
 	  }
 	  cur.Logout = logout */
 	  
-   renderTemplate(w, "main", cur)
+	  tmpl, err := template.ParseFiles("templates/base.html", "templates/main.html")
+	  if err != nil {
+	     fmt.Fprint(w, "parsing:", err)
+	  }
+	  
+	  err = tmpl.Execute(w, cur)
+	  if err != nil {
+	     fmt.Fprint(w, "parsing:", err)
+	  }
+	  
+	  
+	  
+     //renderTemplate(w, "main", cur)
 }
 
 func loginPage(w http.ResponseWriter, r *http.Request){
