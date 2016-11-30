@@ -21,8 +21,9 @@ func init() {
 	http.HandleFunc("/mainpage", mainPage)
 	http.HandleFunc("/registrasi", lamanRegistrasi)
 	http.HandleFunc("/login", loginPage)
-//	http.HandleFunc("/getcm", getCM)
+	http.HandleFunc("/getcm", getCM)
     http.HandleFunc("/tambahdokter", tambahDataDokter)
+	http.HandleFunc("/getinfo", getInfo)
 
 }
 
@@ -36,16 +37,12 @@ type Dokter struct {
 }
 
 /*
-type CurrentUser struct {
-   Logout       string
-   NamaLengkap  string
-}
-
 type DataPasien struct {
    NamaPasien   string
    NomorCM      string
    TglDaftar    time.Time
 }
+
 
 type KunjunganPasien struct {
    NomorCM      string
@@ -59,7 +56,7 @@ type KunjunganPasien struct {
 */
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p interface{}){
-   t, _ := template.ParseFiles("templates/"+tmpl+".html", "templates/base.html")
+   t, _ := template.ParseFiles("templates/base.html", "templates/"+tmpl+".html")
    t.Execute(w, p)
 }
 
@@ -111,7 +108,70 @@ func tambahDataDokter(w http.ResponseWriter, r *http.Request) {
    http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-//func getCM
+func getCM(w http.ResponseWriter, r *http.Request){
+  /* takAdaPasien := `
+    <label for="namapasien">Nama Pasien:</label><br>
+    <input type="text" name="nocm" id="nocm" class="form-control text-capitalize"><br>   
+    <label for="diagnosis">Diagnosis:</label><br>
+	<input type="text" name="diagnosis" id="diag" class="form-control text-capitalize"><br>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="1">ATS 1</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="2">ATS 2</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="3">ATS 3</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="4">ATS 4</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="5">ATS 5</label><br>
+	<label for="" class="radio-inline"><input type="radio" name="iki" id="" value="1"></label>
+	<label for="" class="radio-inline"><input type="radio" name="iki" id="" value="2"></label><br>
+	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="1">Pagi</label>
+	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="2">Sore</label>
+	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="3">Malam</label><br>
+	
+	<button type="submit"></button>
+   `
+   
+   adaPasien := `
+    <label for="namapasien">Nama Pasien:</label><br>
+    <input type="text" name="namapasien" id="nocm" class="form-control text-capitalize" value={{.NamaPasien}}><br>   
+    <label for="diagnosis">Diagnosis:</label><br>
+	<input type="text" name="diagnosis" id="diag" class="form-control text-capitalize"><br>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="1">ATS 1</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="2">ATS 2</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="3">ATS 3</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="4">ATS 4</label>
+    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="5">ATS 5</label><br>
+	<label for="" class="radio-inline"><input type="radio" name="iki" id="" value="1"></label>
+	<label for="" class="radio-inline"><input type="radio" name="iki" id="" value="2"></label><br>
+	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="1">Pagi</label>
+	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="2">Sore</label>
+	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="3">Malam</label><br>
+	
+	<button type="submit"></button>
+   `
+   
+   ctx := appengine.NewContext(r)*/
+   
+   nocm := r.FormValue("nocm");
+   
+   fmt.Fprint(w, nocm)
+   /*parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+   pasienKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, parentKey)
+   
+   q := datastore.NewQuery("DataPasien").Ancestor(parentKey).Filter("__key__ >", pasienKey)
+   
+   t := q.Run(ctx)
+   
+   for {
+      var p DataPasien
+	  k, err := t.Next(&p)
+	  if err == datastore.Done {
+	     fmt.Fprint(w, takAdaPasien)
+	  }
+	  
+	  if err != nil {
+	     tmpl := template.Must(template.New("ada").Parse(adaPasien))
+		 tmpl.Execute(w, k)
+	  }
+   }*/
+}
 
 func index(w http.ResponseWriter, r *http.Request) {
    if r.Method != "GET" {
@@ -146,53 +206,31 @@ func lamanRegistrasi(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request){
-
-      type person struct {
-	     NamaLengkap   string
-		 Logout        string
-	  }
-      //ctx := appengine.NewContext(r)
-      //parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-	  /*
-      var logout, email string
-      u := user.Current(ctx)	  
-	  logout, _ = user.LogoutURL(ctx, "/")
-	  email = u.Email
-	  */
-	  cur := &person{
-	     NamaLengkap: "I Wayan Surya Sedana",
-	     Logout: "logout",
-	  }
-
-   //Problem: cara menambahkan logout ke type CurrentUser	 
-	  /*  
-	  q := datastore.NewQuery("Dokter").Ancestor(parentKey).Filter("Email =", email).Project("NamaLengkap")
-	  
-	  res := q.Run(ctx)
-	  
-	  for {
-		 _, err := res.Next(&cur)
-		 if err == datastore.Done {
-		    break
-		 }
-	  }
-	  cur.Logout = logout */
-	  
-	  tmpl, err := template.ParseFiles("templates/base.html", "templates/main.html")
-	  if err != nil {
-	     fmt.Fprint(w, "parsing:", err)
-	  }
-	  
-	  err = tmpl.Execute(w, cur)
-	  if err != nil {
-	     fmt.Fprint(w, "parsing:", err)
-	  }
-	  
-	  
-	  
-     //renderTemplate(w, "main", cur)
+   renderTemplate(w, "main", nil)
 }
 
 func loginPage(w http.ResponseWriter, r *http.Request){
    renderTemplate(w, "login", nil)
+}
+
+func getInfo(w http.ResponseWriter, r *http.Request){
+
+      type Person struct {
+	     NamaLengkap   string
+		 Logout        string
+	  }
+	  
+      ctx := appengine.NewContext(r)
+      
+      var logout, email string
+      u := user.Current(ctx)	  
+	  logout, _ = user.LogoutURL(ctx, "/")
+	  email = u.Email
+      
+	  p := &Person{
+	     NamaLengkap: email,
+		 Logout: logout,
+	  }
+	  
+      fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
 }

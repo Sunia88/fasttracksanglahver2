@@ -18,17 +18,27 @@ $(document).ready(function(){
 		
 		if (value == ""){
 			$("#datapasien").html("Masukkan No. CM");
-			//nocm = "";
 		} else if (value.length < 8){
 			$("#datapasien").html("No. CM tidak lengkap");
-			//nocm = "";
 		} else {
 			$("#nocm").prop("disabled", true);
 			nocm = value;
+			$.get("/getcm", {nocm: value}, function(data){
+				$("#datapasien").html(data);
+				$("#nocm").prop("disabled", false);
+				
+				
+			})
 		}
-	})
+	});
 	
-	
+	$("#infouser").html(function(){
+		$.get("/getinfo", function(data){
+			$("#infouser").html(data)
+		})
+		
+		
+	});
 	
 	
 })

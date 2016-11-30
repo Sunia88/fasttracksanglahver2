@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+        {{$s := .}}
+        {{with $s.NamaLengkap}}<p>Selamat Datang {{.}}</p>
+	    {{else}} <p>Data anda belum masuk, silahkan <a href="/registrasi">daftar</a></p>
+	    {{end}}
+	    {{with $s.Logout}}<p><a href="{{.}}">Logout</a> </p>{{end}}
+</body>
+</html>

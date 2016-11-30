@@ -1,13 +1,3 @@
-{{define "welcome"}}
-		{{$s := .}}
-        {{with $s.NamaLengkap}}<p>Selamat Datang {{.}}</p>
-	    {{else}} <p>Data anda belum masuk, silahkan <a href="/registrasi">daftar</a></p>
-	    {{end}}
-	    {{with $s.Logout}}<p><a href="{{.}}">Logout</a> </p>{{end}}
-
-{{end}}
-
-
 {{define "title"}}
 <title>Halaman Utama</title>
 <script src="static/main.js"></script>
@@ -18,8 +8,7 @@
 <div class="container">	
    <div class="col-sm-4"></div>
    <div class="col-sm-4">
-      <p>test</p>
-      {{template "welcome"}}
+      <div id="infouser" class="text-center"></div>
    </div>
    <div class="col-sm-4"></div>
 </div>
@@ -29,7 +18,7 @@
     <div class="panel panel-info">
       <div class="panel-heading text-center">Input Data Pasien</div>
       <div class="panel-body">
-        <form action="/searchCM" method="post" role="form">
+        <form action="/getdatapasien" method="post" role="form">
           <div class="form-group" id="form1">
             <label for="nocm">No. CM:</label><br>
             <input type="text" name="nocm" id="nocm" class="form-control">
@@ -44,7 +33,7 @@
     <div class="panel panel-info">
       <div class="panel-heading text-center">Tabel IKI</div>
       <div class="panel-body">
-        <table class="table table-bordered table-responsive">
+        <table class="table table-bordered table-responsive" id="tabeliki">
           <tr>
             <th class="bg-success">No.</th>
             <th class="bg-success">Tanggal</th>
