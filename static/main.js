@@ -23,10 +23,14 @@ $(document).ready(function(){
 		} else {
 			$("#nocm").prop("disabled", true);
 			nocm = value;
-			$.get("/getcm", {nocm: value}, function(data){
-				$("#datapasien").html(data);
-				$("#nocm").prop("disabled", false);
-				
+			$.ajax({
+				type: 'post',
+				url: 'getcm',
+				data: "nocm="+nocm,
+				success:function(data){
+				   $("#datapasien").html(data);
+				   $("#nocm").prop("disabled", false);
+				}
 				
 			})
 		}
