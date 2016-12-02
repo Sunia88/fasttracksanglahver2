@@ -44,5 +44,30 @@ $(document).ready(function(){
 		
 	});
 	
+	$("#form1").on("click", "#btnsub", function(){
+		
+		var nocm = $("#nocm").val();
+		var namapts = $("#namapts").val();
+		var diag = $("#diag").val();
+		var ats = $("input[type='radio'][name='ats']:checked").val();
+		var iki = $("input[type='radio'][name='iki']:checked").val();
+		var shift = $("input[type='radio'][name='shift']:checked").val();
+		
+		if (nocm == ""||namapts == ""||diag == ""||ats == ""||iki == ""||shift ==""){
+			alert("Data Belum Lengkap");
+		}else{
+			$.ajax({
+				type:'post',
+				url:'inputdatapts',
+				data:"nocm="+nocm+"&namapts="+namapts+"&diag="+diag+"&ats="+ats+"&iki="+iki+"&shift="+shift,
+				success:function(){
+					$("#errorbtn").html("Sukses")
+				}
+				
+			});
+		}
+		
+	})
+	
 	
 })
