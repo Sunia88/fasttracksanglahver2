@@ -9,7 +9,8 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
-
+    "appengine/memcache"
+	
     "fmt"
 
 )
@@ -20,20 +21,14 @@ func init() {
     http.HandleFunc("/", index)
 	http.HandleFunc("/mainpage", mainPage)
 	http.HandleFunc("/getcm", getCM)
-    http.HandleFunc("/tambahdokter", tambahDataDokter)
+
 	http.HandleFunc("/getinfo", getInfo)
 	http.HandleFunc("/inputdatapts", inputPasien)
+	http.HandleFunc("/getlist", listPasien)
 
 }
 
-
-type Dokter struct {
-   Username     string
-   NamaLengkap  string
-   Email        string
-   Password     string
-   TglDaftar    time.Time
-}
+var PasienAda bool = false
 
 
 type DataPasien struct {
@@ -42,12 +37,26 @@ type DataPasien struct {
    TglDaftar, Umur              time.Time
 }
 
-
 type KunjunganPasien struct {
    Diagnosis, LinkID            string
    GolIKI, ATS, ShiftJaga       string
    JamDatang                    time.Time
    Dokter                       string
+}
+
+type ListPasien struct {
+   DataPasien
+   KunjunganPasien
+}
+
+func ubahTanggal(tgl time.Time, shift string) string{
+   jam := tgl.Hour()
+   
+   if jam < 12 && shift == "3"{
+	     tgl.AddDate(0,0,-1)
+		 }
+   final := tgl.Format("02-01-2006")
+   return final
 }
 
 func renderPasien(w http.ResponseWriter, data DataPasien, tmp string ){
@@ -69,6 +78,17 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 	  return
    }
    
+   html := `
+      <tr>
+      	<td id="notabel"></td>
+      	<td>{{.JamDatang}}</td>
+      	<td>{{.NomorCM}}</td>
+      	<td>{{.NamaPasien}}</td>
+      	<td>{{.Diagnosis}}</td>
+      	<td>{{.ATS}}</td>
+      	<td>{{.GolIKI}}</td>
+      </tr>
+   `
    ctx := appengine.NewContext(r)
    
    u := user.Current(ctx)
@@ -79,64 +99,77 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    parentKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, grandParentKey)
    pasienKey := datastore.NewIncompleteKey(ctx, "KunjunganPasien", parentKey)
    
-   q := datastore.NewQuery("DataPasien").Ancestor(grandParentKey).Filter("__key__ >", parentKey)
-   if q.Count(ctx) == 0 {
-   
    data := &DataPasien{
       NamaPasien: r.FormValue("namapts"),
-   }
-   
-      if _, err := datastore.Put(ctx, parentKey, data);err != nil{
-            fmt.Fprint(w, "Error Database: %v", err)
-		    return
-	     }
    }
    
    kun := &KunjunganPasien{
 	  Diagnosis: r.FormValue("diag"),
 	  GolIKI: r.FormValue("iki"),
 	  ATS: r.FormValue("ats"),
-	  ShiftJaga: r.FormValue("shif"),
+	  ShiftJaga: r.FormValue("shift"),
 	  JamDatang: time.Now(),
 	  Dokter: doc,
 	  LinkID: pasienKey.Encode(),
    }
    
-   if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
-      fmt.Fprint(w, "Error Database: %v", err)
-	  return
+   res := new(ListPasien)
+   res.JamDatang = kun.JamDatang
+   res.NomorCM = nocm
+   res.NamaPasien = data.NamaPasien
+   res.Diagnosis = kun.Diagnosis
+   res.ATS = kun.ATS
+   res.GolIKI = kun.GolIKI
+   res.LinkID = kun.LinkID
+   
+   item1 := &memcache.Item{
+      Key: res.LinkID,
+	  Object: res,
    }
+   
+   if PasienAda == false {
+       if _, err := datastore.Put(ctx, parentKey, data);err != nil{
+            fmt.Fprint(w, "Error Database: %v", err)
+		    return
+	     }
+       if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
+           fmt.Fprint(w, "Error Database: %v", err)
+	       return
+         }
+		 
+	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
+           if err := memcache.Set(ctx, item1); err != nil{
+		      fmt.Printf("error setting item; %v", err)
+		   }
+         }
+		 
+      }else{
+	   if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
+           fmt.Fprint(w, "Error Database: %v", err)
+	       return
+         }
+	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
+           if err := memcache.Set(ctx, item1); err != nil{
+		      fmt.Printf("error setting item; %v", err)
+		   }
+	  }
+		 
+   }
+   
+   res2 := new(ListPasien)
+   if item2, err := memcache.Get(ctx, res.LinkID, res2); err == memcache.ErrCacheMiss{
+      fmt.Printf("Item tidak tersimpan dalam cache")
+   }else if err != nil {
+      fmt.Printf("Tidak bisa mengambil item: %v", err)
+   } else {
+      renderPasien(w, res2, html)
+   }
+   
+   
    
    fmt.Fprint(w, kun.LinkID)
    
    
-}
-func tambahDataDokter(w http.ResponseWriter, r *http.Request) {
-
-   if r.Method != "POST" {
-      http.Error(w, "Post request only", http.StatusMethodNotAllowed)
-	  return
-   }
-   
-   ctx := appengine.NewContext(r)
-
-   dr := &Dokter{
-      Username: r.FormValue("username"),
-	  NamaLengkap: r.FormValue("namalengkap"),
-	  Email: r.FormValue("email"),
-	  Password: r.FormValue("pwd1"),
-	  TglDaftar: time.Now(),
-   }
-   
-   parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-   
-   dok := datastore.NewKey(ctx, "Dokter", dr.Username, 0, parentKey)
-   if _, err := datastore.Put(ctx, dok, dr); err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-	  return
-   }
-   
-   http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func getCM(w http.ResponseWriter, r *http.Request){
@@ -161,7 +194,8 @@ func getCM(w http.ResponseWriter, r *http.Request){
 	
 	<button type="submit" class="btn btn-primary btn-md" id="btnsub">Tambahkan Pasien</button><br><div id="errorbtn"></div>
    `
-
+   
+   adakah := &PasienAda
    ctx := appengine.NewContext(r)
    
    nocm := r.FormValue("nocm");
@@ -169,7 +203,7 @@ func getCM(w http.ResponseWriter, r *http.Request){
    parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
    pasienKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, parentKey)
    
-   q := datastore.NewQuery("DataPasien").Ancestor(parentKey).Filter("__key__ >", pasienKey)
+   q := datastore.NewQuery("DataPasien").Ancestor(pasienKey)
    var pasien []DataPasien
    t, err := q.GetAll(ctx, &pasien)
    if err != nil {
@@ -177,12 +211,15 @@ func getCM(w http.ResponseWriter, r *http.Request){
 	  return
    }
    if len(t) == 0{
+   
          pts := DataPasien{}
          renderPasien(w, pts, adaPasien)
+		    *adakah = false
 	  }else{
    for _, pts := range pasien {
             renderPasien(w, pts, adaPasien)
-	     }
+			*adakah = true
+		  }
 	  }
   }
 
@@ -238,4 +275,18 @@ func getInfo(w http.ResponseWriter, r *http.Request){
 	  }
 	  
       fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
+}
+
+func listPasien(w http.ResponseWriter, r *http.Request){
+   ctx := appengine.NewContext(r)
+   
+   u := user.Current(ctx)
+   email := u.Email
+   
+   parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+   
+   q := datastore.NewQuery("KunjunganPasien").Ancestor(parentKey).Filter("Dokter =", email).Limit(10).Order("-JamDatang")
+   
+   
+   
 }

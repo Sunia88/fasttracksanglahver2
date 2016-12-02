@@ -60,12 +60,22 @@ $(document).ready(function(){
 				type:'post',
 				url:'inputdatapts',
 				data:"nocm="+nocm+"&namapts="+namapts+"&diag="+diag+"&ats="+ats+"&iki="+iki+"&shift="+shift,
-				success:function(){
-					$("#errorbtn").html("Sukses")
+				success:function(data){
+					alert(data);
+					//$("#errorbtn").html("Sukses")
 				}
 				
 			});
 		}
+		
+	})
+	
+	$("#daftarpasien").html(function(){
+		$.get("/getlist", function(data){
+			$("#daftarpasien").html(data)
+			
+		})
+		
 		
 	})
 	
