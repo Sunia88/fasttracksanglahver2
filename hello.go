@@ -66,6 +66,17 @@ func renderPasien(w http.ResponseWriter, data interface{}, tmp string ){
 	  }
 	  tmpl.Execute(w, data)
 }
+
+func CreateTime() time.Time{
+   t := time.Now()
+   zone, err := time.LoadLocation("Asia/Makassar")
+   if err != nil{
+      fmt.Println("Err: ", err.Error())
+   }
+   jam :=t.In(zone)
+   return jam
+   
+}
    
 func renderTemplate(w http.ResponseWriter, tmpl string, p interface{}){
    t, _ := template.ParseFiles("templates/base.html", "templates/"+tmpl+".html")
@@ -104,17 +115,13 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    data := &DataPasien{
       NamaPasien: r.FormValue("namapts"),
    }
-   loc, err := time.LoadLocation("Asia/Makassar") 
-   if err != nil{
-      fmt.Println("err: ", err.Error())
-   }
    
    kun := &KunjunganPasien{
 	  Diagnosis: r.FormValue("diag"),
 	  GolIKI: r.FormValue("iki"),
 	  ATS: r.FormValue("ats"),
 	  ShiftJaga: r.FormValue("shift"),
-	  JamDatang: time.Now().In(loc),
+	  JamDatang: CreateTime(),
 	  Dokter: doc,
 	  LinkID: pasienKey.Encode(),
    }
