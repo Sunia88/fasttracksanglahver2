@@ -9,7 +9,7 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
-    "appengine/memcache"
+//    "appengine/memcache"
 	
     "fmt"
 
@@ -24,7 +24,7 @@ func init() {
 
 	http.HandleFunc("/getinfo", getInfo)
 	http.HandleFunc("/inputdatapts", inputPasien)
-	http.HandleFunc("/getlist", listPasien)
+//	http.HandleFunc("/getlist", listPasien)
 
 }
 
@@ -59,7 +59,7 @@ func ubahTanggal(tgl time.Time, shift string) string{
    return final
 }
 
-func renderPasien(w http.ResponseWriter, data DataPasien, tmp string ){
+func renderPasien(w http.ResponseWriter, data interface{}, tmp string ){
       tmpl, err := template.New("tempPasien").Parse(tmp)
 	  if err != nil {
 	  fmt.Fprint(w, "Error Parsing: %v", err)
@@ -77,7 +77,8 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
       http.Error(w, "Post request only", http.StatusMethodNotAllowed)
 	  return
    }
-   
+
+/*   
    html := `
       <tr>
       	<td id="notabel"></td>
@@ -89,6 +90,7 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
       	<td>{{.GolIKI}}</td>
       </tr>
    `
+*/
    ctx := appengine.NewContext(r)
    
    u := user.Current(ctx)
@@ -102,18 +104,25 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    data := &DataPasien{
       NamaPasien: r.FormValue("namapts"),
    }
+   loc, err := time.LoadLocation("Asia/Makassar") 
+   if err != nil{
+      fmt.Println("err: ", err.Error())
+   }
    
    kun := &KunjunganPasien{
 	  Diagnosis: r.FormValue("diag"),
 	  GolIKI: r.FormValue("iki"),
 	  ATS: r.FormValue("ats"),
 	  ShiftJaga: r.FormValue("shift"),
-	  JamDatang: time.Now(),
+	  JamDatang: time.Now().In(loc),
 	  Dokter: doc,
 	  LinkID: pasienKey.Encode(),
    }
+
+
+//tunda memcache dulu   
    
-   res := new(ListPasien)
+   var res ListPasien
    res.JamDatang = kun.JamDatang
    res.NomorCM = nocm
    res.NamaPasien = data.NamaPasien
@@ -121,11 +130,11 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    res.ATS = kun.ATS
    res.GolIKI = kun.GolIKI
    res.LinkID = kun.LinkID
-   
+/*   
    item1 := &memcache.Item{
       Key: res.LinkID,
 	  Object: res,
-   }
+   } */
    
    if PasienAda == false {
        if _, err := datastore.Put(ctx, parentKey, data);err != nil{
@@ -137,25 +146,25 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 	       return
          }
 		 
-	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
+/*	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
            if err := memcache.Set(ctx, item1); err != nil{
 		      fmt.Printf("error setting item; %v", err)
 		   }
-         }
+         }*/
 		 
       }else{
 	   if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
            fmt.Fprint(w, "Error Database: %v", err)
 	       return
          }
-	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
+/*	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
            if err := memcache.Set(ctx, item1); err != nil{
 		      fmt.Printf("error setting item; %v", err)
 		   }
-	  }
+	  }*/
 		 
    }
-   
+/*   
    res2 := new(ListPasien)
    if item2, err := memcache.Get(ctx, res.LinkID, res2); err == memcache.ErrCacheMiss{
       fmt.Printf("Item tidak tersimpan dalam cache")
@@ -164,12 +173,11 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    } else {
       renderPasien(w, res2, html)
    }
-   
-   
-   
-   fmt.Fprint(w, kun.LinkID)
-   
-   
+*/   
+
+fmt.Fprint(w, "Yeeeeee")   
+//   renderPasien(w, &res, html)
+
 }
 
 func getCM(w http.ResponseWriter, r *http.Request){
@@ -277,6 +285,7 @@ func getInfo(w http.ResponseWriter, r *http.Request){
       fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
 }
 
+/*
 func listPasien(w http.ResponseWriter, r *http.Request){
    ctx := appengine.NewContext(r)
    
@@ -289,4 +298,4 @@ func listPasien(w http.ResponseWriter, r *http.Request){
    
    
    
-}
+}*/

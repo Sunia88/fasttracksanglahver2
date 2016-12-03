@@ -61,7 +61,7 @@ $(document).ready(function(){
 				url:'inputdatapts',
 				data:"nocm="+nocm+"&namapts="+namapts+"&diag="+diag+"&ats="+ats+"&iki="+iki+"&shift="+shift,
 				success:function(data){
-					alert(data);
+					alert(data);//$("#daftarpasien").html(data)
 					//$("#errorbtn").html("Sukses")
 				}
 				
@@ -70,14 +70,14 @@ $(document).ready(function(){
 		
 	})
 	
-	$("#daftarpasien").html(function(){
+/*	$("#daftarpasien").html(function(){
 		$.get("/getlist", function(data){
 			$("#daftarpasien").html(data)
 			
 		})
 		
 		
-	})
+	})*/
 	
 	
 })
