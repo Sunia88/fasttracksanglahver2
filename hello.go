@@ -12,6 +12,8 @@ import (
 //    "appengine/memcache"
 	
     "fmt"
+	
+//	"encoding/json"
 
 )
 
@@ -24,7 +26,9 @@ func init() {
 
 	http.HandleFunc("/getinfo", getInfo)
 	http.HandleFunc("/inputdatapts", inputPasien)
-//	http.HandleFunc("/getlist", listPasien)
+	http.HandleFunc("/getlist", listPasien)
+	
+	//http.HandleFunc("/testdb", testdb)
 
 }
 
@@ -47,16 +51,26 @@ type KunjunganPasien struct {
 type ListPasien struct {
    DataPasien
    KunjunganPasien
+   TanggalFinal    string
+}
+
+func bulanIni() time.Time{
+   y, m, _ := time.Now().Date()
+   bulan := time.Date(y, m, 03, 0, 0, 0, 0, time.UTC)
+   return bulan
+
 }
 
 func ubahTanggal(tgl time.Time, shift string) string{
-   jam := tgl.Hour()
    
+   ubah := tgl   
+   jam := ubah.Hour()
+
    if jam < 12 && shift == "3"{
-	     tgl.AddDate(0,0,-1)
-		 }
-   final := tgl.Format("02-01-2006")
-   return final
+	     ubah = tgl.AddDate(0,0,-1)
+         }
+	final := ubah.Format("02-01-2006")
+	return final
 }
 
 func renderPasien(w http.ResponseWriter, data interface{}, tmp string ){
@@ -90,17 +104,7 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    }
 
 /*   
-   html := `
-      <tr>
-      	<td id="notabel"></td>
-      	<td>{{.JamDatang}}</td>
-      	<td>{{.NomorCM}}</td>
-      	<td>{{.NamaPasien}}</td>
-      	<td>{{.Diagnosis}}</td>
-      	<td>{{.ATS}}</td>
-      	<td>{{.GolIKI}}</td>
-      </tr>
-   `
+
 */
    ctx := appengine.NewContext(r)
    
@@ -128,15 +132,7 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 
 
 //tunda memcache dulu   
-   
-   var res ListPasien
-   res.JamDatang = kun.JamDatang
-   res.NomorCM = nocm
-   res.NamaPasien = data.NamaPasien
-   res.Diagnosis = kun.Diagnosis
-   res.ATS = kun.ATS
-   res.GolIKI = kun.GolIKI
-   res.LinkID = kun.LinkID
+
 /*   
    item1 := &memcache.Item{
       Key: res.LinkID,
@@ -292,17 +288,88 @@ func getInfo(w http.ResponseWriter, r *http.Request){
       fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
 }
 
-/*
+//Fungsi untuk mendapatkan list pasien bulan ini
 func listPasien(w http.ResponseWriter, r *http.Request){
    ctx := appengine.NewContext(r)
    
    u := user.Current(ctx)
    email := u.Email
    
-   parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+   item := `
+		 <tr>
+		 	<td class="text-right"><div class="checkbox">
+		 		<label><input type="checkbox" name="itemkey" id="" value="{{.LinkID}}"></label>
+		 	</div></td>
+		 	<td class="text-right">{{.TanggalFinal}}</td>
+		 	<td class="text-right">{{.NomorCM}}</td>
+		 	<td class="text-left">{{.NamaPasien}}</td>
+		 	<td class="text-left">{{.Diagnosis}}</td>
+		 	{{template "iki"}}
+		 </tr>
+		 `
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang").Limit(20)
    
-   q := datastore.NewQuery("KunjunganPasien").Ancestor(parentKey).Filter("Dokter =", email).Limit(10).Order("-JamDatang")
-   
-   
-   
-}*/
+   t := q.Run(ctx)
+   for {
+      var r ListPasien
+	  k, err := t.Next(&r)
+	  if err == datastore.Done{
+	     break
+	  }
+	  if err != nil{
+	     fmt.Fprint(w, "Error Fetching Data: ", err)
+		 break
+	  }
+	  
+	  jam := ubahTanggal(r.JamDatang, r.ShiftJaga)
+	  r.TanggalFinal = jam
+	  nocm := k.Parent()
+	  r.NomorCM = nocm.StringID()
+	  
+	  nm:= datastore.NewQuery("DataPasien").Ancestor(nocm).Project("NamaPasien")
+	  c := nm.Run(ctx)
+	  var nama DataPasien
+	  _, err = c.Next(&nama)
+	  if err == datastore.Done{
+		 break
+	  }
+	  
+	  if err != nil{
+	     fmt.Fprint(w, "Error Cannot Resolve Query :", err)
+		 break
+	  }
+	  
+	  r.NamaPasien = nama.NamaPasien
+
+	  tmpl, err := template.New("tempPasien").Parse(item)
+	  if err != nil {
+	     fmt.Fprint(w, "Error Parsing: %v", err)
+	     }
+	  var tmpliki string
+	  if r.GolIKI == "1"{
+	  	tmpliki = `
+        {{define "iki"}}
+			<td class="text-center">&#x2714;</td>
+			<td class="text-center"></td>
+			{{end}}
+			`
+	  }else{
+	    tmpliki = `
+		{{define "iki"}}
+		   	<td class="text-center"></td>
+			<td class="text-center">&#x2714;</td>
+     	{{end}}
+       `	
+	  }
+	  
+	  tmplend, err := template.Must(tmpl.Clone()).Parse(tmpliki)
+	  if err != nil {
+	     fmt.Fprint(w, "Error Parsing Second template :", err)
+	  }
+	  
+	     tmplend.Execute(w, r)
+	  
+   }
+
+   	
+}

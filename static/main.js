@@ -60,24 +60,24 @@ $(document).ready(function(){
 				type:'post',
 				url:'inputdatapts',
 				data:"nocm="+nocm+"&namapts="+namapts+"&diag="+diag+"&ats="+ats+"&iki="+iki+"&shift="+shift,
-				success:function(data){
-					alert(data);//$("#daftarpasien").html(data)
+				success:function(){
+					//$("#datapasien").html("Sukses")
 					//$("#errorbtn").html("Sukses")
 				}
 				
-			});
+			})
 		}
 		
 	})
 	
-/*	$("#daftarpasien").html(function(){
+	$("#tabelpasien").html(function(){
 		$.get("/getlist", function(data){
-			$("#daftarpasien").html(data)
+			$("#listpasien").html(data)
 			
 		})
 		
 		
-	})*/
+	})
 	
 	
 })
