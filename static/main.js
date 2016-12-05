@@ -70,7 +70,7 @@ $(document).ready(function(){
 		
 	})
 	
-	$("#tabelpasien").html(function(){
+	$("#listpasien").html(function(){
 		$.get("/getlist", function(data){
 			$("#listpasien").html(data)
 			
@@ -79,5 +79,12 @@ $(document).ready(function(){
 		
 	})
 	
-	
+	$("#listiki").html(function(){
+		$.get("/getiki", function(data){
+			$("#listiki").html(data)
+			
+		})
+		
+		
+	})	
 })

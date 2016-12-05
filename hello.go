@@ -28,6 +28,7 @@ func init() {
 	http.HandleFunc("/inputdatapts", inputPasien)
 	http.HandleFunc("/getlist", listPasien)
 	
+	http.HandleFunc("/getiki", listIKI)
 	//http.HandleFunc("/testdb", testdb)
 
 }
@@ -54,12 +55,36 @@ type ListPasien struct {
    TanggalFinal    string
 }
 
-func bulanIni() time.Time{
+func ubahBulanIni(d int) time.Time{
    y, m, _ := time.Now().Date()
-   bulan := time.Date(y, m, 03, 0, 0, 0, 0, time.UTC)
+   bulan := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
    return bulan
 
 }
+
+/*
+func countIKI(tgl time.Time, counter int, iki string)(iki1, iki2, final string){
+   datatgl := tgl
+   hariIni := ubahBulanIni(i)
+   
+   if hariIni != datatgl {
+      Counter++
+	     if iki == "1" {
+		    Iki1 = 0
+			Iki1++
+		 }else{
+		    if iki == "2" {
+			Iki2 = 0
+			Iki2++
+			}
+		 }
+	if iki
+   }
+   
+   
+   
+
+} */
 
 func ubahTanggal(tgl time.Time, shift string) string{
    
@@ -88,8 +113,7 @@ func CreateTime() time.Time{
       fmt.Println("Err: ", err.Error())
    }
    jam :=t.In(zone)
-   return jam
-   
+   return jam  
 }
    
 func renderTemplate(w http.ResponseWriter, tmpl string, p interface{}){
@@ -103,9 +127,6 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 	  return
    }
 
-/*   
-
-*/
    ctx := appengine.NewContext(r)
    
    u := user.Current(ctx)
@@ -130,15 +151,7 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 	  LinkID: pasienKey.Encode(),
    }
 
-
-//tunda memcache dulu   
-
-/*   
-   item1 := &memcache.Item{
-      Key: res.LinkID,
-	  Object: res,
-   } */
-   
+  
    if PasienAda == false {
        if _, err := datastore.Put(ctx, parentKey, data);err != nil{
             fmt.Fprint(w, "Error Database: %v", err)
@@ -148,39 +161,14 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
            fmt.Fprint(w, "Error Database: %v", err)
 	       return
          }
-		 
-/*	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
-           if err := memcache.Set(ctx, item1); err != nil{
-		      fmt.Printf("error setting item; %v", err)
-		   }
-         }*/
-		 
       }else{
 	   if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
            fmt.Fprint(w, "Error Database: %v", err)
 	       return
          }
-/*	   if err := memcache.Add(ctx, item1); err == memcache.ErrNotStored {
-           if err := memcache.Set(ctx, item1); err != nil{
-		      fmt.Printf("error setting item; %v", err)
-		   }
-	  }*/
-		 
+	 
    }
-/*   
-   res2 := new(ListPasien)
-   if item2, err := memcache.Get(ctx, res.LinkID, res2); err == memcache.ErrCacheMiss{
-      fmt.Printf("Item tidak tersimpan dalam cache")
-   }else if err != nil {
-      fmt.Printf("Tidak bisa mengambil item: %v", err)
-   } else {
-      renderPasien(w, res2, html)
-   }
-*/   
-
-fmt.Fprint(w, "Yeeeeee")   
-//   renderPasien(w, &res, html)
-
+ 
 }
 
 func getCM(w http.ResponseWriter, r *http.Request){
@@ -232,7 +220,7 @@ func getCM(w http.ResponseWriter, r *http.Request){
 			*adakah = true
 		  }
 	  }
-  }
+}
 
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -294,9 +282,8 @@ func listPasien(w http.ResponseWriter, r *http.Request){
    
    u := user.Current(ctx)
    email := u.Email
-   
-   item := `
-		 <tr>
+   item := `<tr>
+            
 		 	<td class="text-right"><div class="checkbox">
 		 		<label><input type="checkbox" name="itemkey" id="" value="{{.LinkID}}"></label>
 		 	</div></td>
@@ -305,13 +292,13 @@ func listPasien(w http.ResponseWriter, r *http.Request){
 		 	<td class="text-left">{{.NamaPasien}}</td>
 		 	<td class="text-left">{{.Diagnosis}}</td>
 		 	{{template "iki"}}
-		 </tr>
-		 `
-   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang").Limit(20)
+		 </tr>`
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang").Limit(30)
    
    t := q.Run(ctx)
    for {
       var r ListPasien
+
 	  k, err := t.Next(&r)
 	  if err == datastore.Done{
 	     break
@@ -372,4 +359,45 @@ func listPasien(w http.ResponseWriter, r *http.Request){
    }
 
    	
+}
+
+func listIKI(w http.ResponseWriter, r *http.Request){
+   ctx := appengine.NewContext(r)
+   
+   u := user.Current(ctx)
+   email := u.Email
+   awalBulan := ubahBulanIni(1)
+   
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Project("JamDatang", "GolIKI", "ShiftJaga").Order("JamDatang").Limit(300)
+   
+   t := q.Run(ctx)
+   result := make(map[int]KunjunganPasien)   
+   i := 1
+   for{
+   
+      var iki KunjunganPasien
+	  _, err := t.Next(&iki)
+	  if err == datastore.Done{
+		 break
+	  }
+	  if err != nil{
+	     fmt.Fprint(w, "Cannot Read Data: ", err)
+		 break
+	  }
+	  
+	  jam := ubahTanggal(iki.JamDatang, iki.ShiftJaga)
+	  wkt, _ := time.Parse("02-01-2006", jam)
+	  iki.JamDatang = wkt
+	  if wkt.Before(awalBulan) == true {continue}
+	  result[i] = iki
+	  i++
+	}
+	
+	
+	for j := 1;j<=len(result);j++{
+	   fmt.Fprint(w, result[j].GolIKI)
+	   fmt.Fprint(w, result[j].JamDatang)
+	   fmt.Fprintln(w, result[j].ShiftJaga)
+	
+	}
 }

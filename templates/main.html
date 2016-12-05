@@ -34,12 +34,15 @@
       <div class="panel-heading text-center">Tabel IKI</div>
       <div class="panel-body">
         <table class="table table-bordered table-responsive" id="tabeliki">
-          <tr>
+          <thead>
+		  <tr>
             <th class="bg-success">No.</th>
             <th class="bg-success">Tanggal</th>
             <th class="bg-success">IKI 1</th>
             <th class="bg-success">IKI 2</th>
           </tr>
+		  </thead>
+		  <tbody id="listiki"></tbody>
         </table>
       </div>
     </div>
@@ -57,7 +60,8 @@
 		<div class="col-sm-8"></div>
 		<div class="col-sm-2"><button type="button" class="btn btn-danger btn-xs btn-block disabled">Delete</button></div><br><br>
         <table class="table table-bordered table-responsive" id="tabelpasien">
-            <tr>
+            <thead>
+			<tr>
               <th class="bg-success">No</th>
               <th class="bg-success">Tanggal</th>
               <th class="bg-success">No. CM</th>
@@ -66,7 +70,10 @@
               <th class="bg-success">IKI 1</th>
               <th class="bg-success">IKI 2</th>
             </tr>
-			<span id="listpasien"></span>
+			</thead>
+			<tbody id="listpasien">
+
+			</tbody>
         </table>
       </div>
     </div>
