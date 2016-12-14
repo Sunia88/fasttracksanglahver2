@@ -61,8 +61,6 @@ $(document).ready(function(){
 				url:'inputdatapts',
 				data:"nocm="+nocm+"&namapts="+namapts+"&diag="+diag+"&ats="+ats+"&iki="+iki+"&shift="+shift,
 				success:function(){
-					//$("#datapasien").html("Sukses")
-					//$("#errorbtn").html("Sukses")
 				}
 				
 			})
@@ -86,5 +84,13 @@ $(document).ready(function(){
 		})
 		
 		
-	})	
+	})
+
+    //$("#number").html("gaga");
+	
+	$("#listpasien").on("click", "#editbtn", function(){
+		keynum = $("#editbtn").value();
+		$("#btnval").html(keynum);
+	  });
+	
 })

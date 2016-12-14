@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
     "net/http"
+
 	"time"
 	"strconv"
 
@@ -30,6 +31,9 @@ func init() {
 	
 	http.HandleFunc("/getiki", listIKI)
 	//http.HandleFunc("/testdb", testdb)
+	
+	http.HandleFunc("/entri/edit/", editEntri)
+	//http.HandleFunc("/del/{id}", deleteEntri)
 
 }
 
@@ -147,8 +151,7 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 	  ShiftJaga: r.FormValue("shift"),
 	  JamDatang: CreateTime(),
 	  Dokter: doc,
-	  LinkID: pasienKey.Encode(),
-   }
+	}
 
   
    if PasienAda == false {
@@ -171,27 +174,11 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
 }
 
 func getCM(w http.ResponseWriter, r *http.Request){
-    adaPasien := `
-    <label for="namapasien">Nama Pasien:</label><br>
-    {{with .NamaPasien}}<input type="text" name="namapasien" id="namapts" class="form-control text-capitalize" value={{.}}>&nbsp&nbsp<div id="errorpts"></div><br>
-	{{else}}
-	<input type="text" name="namapasien" id="namapts" class="form-control text-capitalize">&nbsp&nbsp<div id="errorpts"></div><br>
-	{{end}}
-	<label for="diagnosis">Diagnosis:</label><br>
-	<input type="text" name="diagnosis" id="diag" class="form-control text-capitalize">&nbsp&nbsp<div id="errordiag"></div><br><br>
-    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="1">ATS 1</label>
-    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="2">ATS 2</label>
-    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="3">ATS 3</label>
-    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="4">ATS 4</label>
-    <label for="" class="radio-inline"><input type="radio" name="ats" id="" value="5">ATS 5</label>&nbsp&nbsp<div id="errorats"></div><br><br>
-	<label for="" class="radio-inline"><input type="radio" name="iki" id="" value="1">IKI 1</label>
-	<label for="" class="radio-inline"><input type="radio" name="iki" id="" value="2">IKI 2</label>&nbsp&nbsp<div id="erroriki"></div><br><br>
-	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="1">Pagi</label>
-	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="2">Sore</label>
-	<label for="" class="radio-inline"><input type="radio" name="shift" id="" value="3">Malam</label>&nbsp&nbsp<div id="errorshift"></div><br><br>
-	
-	<button type="submit" class="btn btn-primary btn-md" id="btnsub">Tambahkan Pasien</button><br><div id="errorbtn"></div>
-   `
+
+   tmpl, err := template.New("adaPasien").ParseFiles("templates/adapasien.html")
+   if err != nil {
+      fmt.Fprint(w, "Error Parsing Template: ", err)
+   }
    
    adakah := &PasienAda
    ctx := appengine.NewContext(r)
@@ -211,11 +198,11 @@ func getCM(w http.ResponseWriter, r *http.Request){
    if len(t) == 0{
    
          pts := DataPasien{}
-         renderPasien(w, pts, adaPasien)
+         tmpl.Execute(w, pts)
 		    *adakah = false
 	  }else{
    for _, pts := range pasien {
-            renderPasien(w, pts, adaPasien)
+            tmpl.Execute(w, pts)
 			*adakah = true
 		  }
 	  }
@@ -283,14 +270,19 @@ func listPasien(w http.ResponseWriter, r *http.Request){
    email := u.Email
    item := `<tr>
             
-		 	<td class="text-right"><div class="checkbox">
-		 		<label><input type="checkbox" name="itemkey" id="" value="{{.LinkID}}"></label>
-		 	</div></td>
+		 	<td class="text-right" id="number"></td>
 		 	<td class="text-right">{{.TanggalFinal}}</td>
 		 	<td class="text-right">{{.NomorCM}}</td>
-		 	<td class="text-left">{{.NamaPasien}}</td>
-		 	<td class="text-left">{{.Diagnosis}}</td>
+		 	<td class="text-left text-capitalize">{{.NamaPasien}}</td>
+		 	<td class="text-left text-capitalize">{{.Diagnosis}}</td>
 		 	{{template "iki"}}
+			<td class="text-center">
+		       <div class="btn-group btn-group-xs">
+			      <a href="/entri/edit/{{.LinkID}}" class="btn btn-info" role="button">Edit</a>
+				  <a href="/entri/del/{{.LinkID}}" class="btn btn-danger" role="button">Delete</a>
+			   </div>
+			   <span id="btnval"></span>
+			</td>
 		 </tr>`
    q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang").Limit(30)
    
@@ -311,6 +303,7 @@ func listPasien(w http.ResponseWriter, r *http.Request){
 	  jamfinal := jam.Format("02-01-2006")
 	  r.TanggalFinal = jamfinal
 	  nocm := k.Parent()
+	  r.LinkID = k.Encode()
 	  r.NomorCM = nocm.StringID()
 	  
 	  nm:= datastore.NewQuery("DataPasien").Ancestor(nocm).Project("NamaPasien")
@@ -437,19 +430,7 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	   z = f
 	   iki1 = g
 	   iki2 = h
-	    /*
-	   fmt.Fprint(w, f)
-	   fmt.Fprint(w, " ")
-	   fmt.Fprint(w, g)
-	   fmt.Fprint(w, " ")
-	   fmt.Fprintln(w, h)
-	  
-	   fmt.Fprint(w, result[j].GolIKI)
-	   fmt.Fprint(w, "   ")
-	   fmt.Fprint(w, result[j].JamDatang)
-	   fmt.Fprint(w, "   ")
-	   fmt.Fprintln(w, result[j].ShiftJaga) */
-	
+
 	}
       bulini := ubahBulanIni(z)
       s := bulini.Format("2-01-2006")
@@ -458,8 +439,45 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	  fmt.Fprint(w, "</td><td>")
 	  fmt.Fprint(w, iki2)
 	  fmt.Fprintln(w, "</td><tr>")
-	
-	
-	
-	
+}
+
+
+func editEntri(w http.ResponseWriter, r *http.Request){
+   keyitem := r.URL.Path[12:]
+   
+   ctx := appengine.NewContext(r)
+   
+
+   keyPasien, err := datastore.DecodeKey(keyitem)
+
+   if err != nil {
+      fmt.Fprintln(w, "Error Decoding Key: ", err)
+   }
+
+   
+   keyData := keyPasien.Parent()
+
+   
+   var editData ListPasien
+   err = datastore.Get(ctx, keyPasien, &editData)
+   if err != nil {
+      fmt.Fprintln(w, "Error ", err)
+   }
+   err = datastore.Get(ctx, keyData, &editData)
+   if err != nil {
+      fmt.Fprintln(w, "Error ", err)
+   }
+   
+   renderTemplate(w, "edit", editData)
+   //fmt.Fprintln(w, editData)
+   /*tmpl, err := template.New("tempPasien").ParseFiles("templates/edit.html")
+	  if err != nil {
+	     fmt.Fprint(w, "Error Parsing: %v", err)
+	     }
+   tmplend, err := template.Must(tmpl.Clone()).ParseFiles("templates/base.html")
+	  if err != nil {
+	     fmt.Fprint(w, "Error Parsing Second template :", err)
+	     }   
+   tmplend.ExecuteTemplate(w, "tempPasien", editData)*/
+  
 }
