@@ -33,7 +33,9 @@ func init() {
 	//http.HandleFunc("/testdb", testdb)
 	
 	http.HandleFunc("/entri/edit/", editEntri)
-	//http.HandleFunc("/del/{id}", deleteEntri)
+	http.HandleFunc("/entri/update", updateEntri)
+	http.HandleFunc("/entri/del/", deleteEntri)
+	http.HandleFunc("/entri/delete", confirmDeleteEntri)
 
 }
 
@@ -364,6 +366,7 @@ func prosesIKI(w http.ResponseWriter, i,j,k int, n string, t time.Time) (int, in
    s = s+d.Format("-01-2006")
    if s != dataJam {
       //c, _ := t.AddDate()
+	  
       fmt.Fprint(w, "<tr><td></td><td>"+s+"</td><td>")
 	  fmt.Fprint(w,j)
 	  fmt.Fprint(w, "</td><td>")
@@ -378,6 +381,7 @@ func prosesIKI(w http.ResponseWriter, i,j,k int, n string, t time.Time) (int, in
 		 k++
 		 i++
 	  }
+	  
 	 }
    if s == dataJam{
       if n == "1"{
@@ -399,11 +403,11 @@ func listIKI(w http.ResponseWriter, r *http.Request){
    q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Project("JamDatang", "GolIKI", "ShiftJaga").Order("JamDatang").Limit(300)
    
    t := q.Run(ctx)
-   result := make(map[int]KunjunganPasien)   
+   result := make(map[int]ListPasien)   
    i := 1
    for{
    
-      var iki KunjunganPasien
+      var iki ListPasien
 	  _, err := t.Next(&iki)
 	  if err == datastore.Done{
 		 break
@@ -416,11 +420,21 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	  jam := ubahTanggal(iki.JamDatang, iki.ShiftJaga)
 	  if jam.Before(awalBulan) == true {continue}
 	  iki.JamDatang = jam
-	  
+	  iki.TanggalFinal = iki.JamDatang.Format("2-01-2006")
 	  result[i] = iki
 	  i++
 	}
-	z := 1
+	for j := 1; j<=len(result); j++{
+	   fmt.Fprint(w, j)
+	   fmt.Fprint(w, "  ")
+	   fmt.Fprint(w, result[j].GolIKI+"   ")
+	   fmt.Fprintln(w, result[j].TanggalFinal)
+	
+	}
+	
+	
+//	fmt.Fprintln(w, result)
+	/*z := 1
 	iki1 := 0
 	iki2 := 0
 	for j := 1;j<=len(result);j++{
@@ -438,46 +452,123 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	  fmt.Fprint(w,iki1)
 	  fmt.Fprint(w, "</td><td>")
 	  fmt.Fprint(w, iki2)
-	  fmt.Fprintln(w, "</td><tr>")
+	  fmt.Fprintln(w, "</td><tr>")*/
 }
+
+func getDatabyKey(item string, w http.ResponseWriter, r *http.Request) ListPasien {
+   
+   ctx := appengine.NewContext(r)
+   dataKun := ListPasien{}
+   keyKun, err := datastore.DecodeKey(item)
+   
+   if err != nil {
+         fmt.Fprintln(w, "Error Decoding Key: ", err)
+      }
+   
+   keyPts := keyKun.Parent()
+   
+   err = datastore.Get(ctx, keyKun, &dataKun)
+   if err != nil {
+      fmt.Fprintln(w, "Error Fetching Data Kunjungan: ", err)
+      }
+   
+   err = datastore.Get(ctx, keyPts, &dataKun)
+   if err != nil {
+      fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
+      }
+
+   dataKun.LinkID = item
+
+   return dataKun
+}
+
 
 
 func editEntri(w http.ResponseWriter, r *http.Request){
    keyitem := r.URL.Path[12:]
+   editData := getDatabyKey(keyitem, w, r)
+   renderTemplate(w, "edit", editData)
+   
+}
+
+func updateEntri(w http.ResponseWriter, r *http.Request){
+   if r.Method != "POST" {
+      http.Error(w, "POST requests only", http.StatusMethodNotAllowed)
+	  return
+   }
    
    ctx := appengine.NewContext(r)
-   
 
-   keyPasien, err := datastore.DecodeKey(keyitem)
+   kun := &KunjunganPasien{}   
+   pts := &DataPasien{}
 
+   kun.LinkID = r.FormValue("entri")
+   keyKun, err := datastore.DecodeKey(kun.LinkID)
    if err != nil {
-      fmt.Fprintln(w, "Error Decoding Key: ", err)
+      fmt.Fprintln(w, "Error Generating Key: ", err)
+   }
+   keyPts := keyKun.Parent()   
+   
+   err = datastore.Get(ctx, keyKun, kun)
+   if err != nil {
+      fmt.Fprintln(w, "Error Fetching Data: ", err)
+	  return
+   }
+   kun.Diagnosis = r.FormValue("diagnosis")
+   kun.ATS = r.FormValue("ats")
+   kun.GolIKI = r.FormValue("iki")
+   kun.ShiftJaga = r.FormValue("shift")
+   
+   err = datastore.Get(ctx, keyPts, pts)
+   if err != nil {
+      fmt.Fprintln(w, "Error Fetching Data: ", err)
+	  return
+   }
+   pts.NamaPasien = r.FormValue("namapasien")
+
+   
+   if _, err := datastore.Put(ctx, keyKun, kun); err != nil {
+      fmt.Fprint(w, "Error Putting Data Kunjungan: ", err)
+	  return
+   }
+   
+   if _, err := datastore.Put(ctx, keyPts, pts); err != nil {
+      fmt.Fprint(w, "Error Putting Data Pasien: ", err)
+      return
+   }
+   
+   http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
+}
+
+func deleteEntri(w http.ResponseWriter, r *http.Request){
+   keyitem := r.URL.Path[11:]
+   editData := getDatabyKey(keyitem, w, r)
+   renderTemplate(w, "delete", editData)
+}
+
+func confirmDeleteEntri(w http.ResponseWriter, r *http.Request){
+   if r.Method != "POST" {
+      http.Error(w, "POST requests only", http.StatusMethodNotAllowed)
+	  return
+   }
+   
+   ctx := appengine.NewContext(r)
+
+   keyKun, err := datastore.DecodeKey(r.FormValue("entri"))
+   if err != nil {
+      fmt.Fprintln(w, "Error Generating Key: ", err)
+   }
+   
+   var pts KunjunganPasien
+   err = datastore.Get(ctx, keyKun, &pts)
+   if err != nil {
+     fmt.Fprintln(w, "Error Fetching Data: ", err)
+	 
    }
 
+   //fmt.Fprintln(w, r.FormValue("entri"))
    
-   keyData := keyPasien.Parent()
+   err = datastore.Delete(ctx, keyKun)
 
-   
-   var editData ListPasien
-   err = datastore.Get(ctx, keyPasien, &editData)
-   if err != nil {
-      fmt.Fprintln(w, "Error ", err)
-   }
-   err = datastore.Get(ctx, keyData, &editData)
-   if err != nil {
-      fmt.Fprintln(w, "Error ", err)
-   }
-   
-   renderTemplate(w, "edit", editData)
-   //fmt.Fprintln(w, editData)
-   /*tmpl, err := template.New("tempPasien").ParseFiles("templates/edit.html")
-	  if err != nil {
-	     fmt.Fprint(w, "Error Parsing: %v", err)
-	     }
-   tmplend, err := template.Must(tmpl.Clone()).ParseFiles("templates/base.html")
-	  if err != nil {
-	     fmt.Fprint(w, "Error Parsing Second template :", err)
-	     }   
-   tmplend.ExecuteTemplate(w, "tempPasien", editData)*/
-  
+   http.Redirect(w, r, "/mainpage", http.StatusSeeOther)   
 }

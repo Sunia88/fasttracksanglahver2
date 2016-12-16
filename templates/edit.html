@@ -1,16 +1,16 @@
 {{define "title"}}
 <title>Edit Entry</title>
 <script src="static/edit.js"></script>
-<!--<link rel="stylesheet" href="static/login.css">-->
+<link rel="stylesheet" href="static/login.css">
 {{end}}
 
 {{define "body"}}
-<script type="text/javascript">
+<script>
 $(document).ready(function(){
-   $('input:radio[name=ats]:nth({{.ATS}}).attr('checked', true);
-   $('input:radio[name=iki]:nth({{.GolIKI}}).attr('checked', true);
-   $('input:radio[name=shift]:nth({{.Shift}}).attr('checked', true);
-})
+   $('input[name="ats"][value={{.ATS}}]').prop('checked', true);
+   $('input[name="iki"][value={{.GolIKI}}]').prop('checked', true);
+   $('input[name="shift"][value={{.ShiftJaga}}]').prop('checked', true);
+   })
 </script>
 <div class="container">
    <div class="col-sm-4"></div>
@@ -18,10 +18,11 @@ $(document).ready(function(){
       <div class="panel panel-info">
 	  <div class="panel-heading text-center">Edit Entri</div>
       <div class="panel-body">
-	  <form action="" method="post">
+	  <form action="/entri/update" method="POST">
 	  <div class="form-group">
 	     <label for="namalkp">Nama Pasien:</label>
 		 <input type="text" name="namapasien" id="namapts" class="form-control text-capitalize" value={{.NamaPasien}}>
+		 <input type="hidden" name="entri" id="entri" value={{.LinkID}}>
 	  </div>
 	  <div class="form-group">
 	     <label for="">Diagnosis:</label>
@@ -55,4 +56,3 @@ $(document).ready(function(){
 	  
 </div>
 {{end}}
-
