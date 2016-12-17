@@ -77,14 +77,14 @@ $(document).ready(function(){
 		
 	})
 	
-	/*$("#listiki").html(function(){
+	$("#listiki").html(function(){
 		$.get("/getiki", function(data){
 			$("#listiki").html(data)
 			
 		})
 		
 		
-	})*/
+	})
 
     //$("#number").html("gaga");
 	

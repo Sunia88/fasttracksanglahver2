@@ -1,11 +1,13 @@
 indexes:
+- kind: DataPasien
+  ancestor: yes
+  properties:
+  - name: NamaPasien
 - kind: KunjunganPasien
   ancestor: yes
   properties:
   - name: Dokter
   - name: JamDatang
     direction: desc
-- kind: DataPasien
-  ancestor: yes
-  properties:
-  - name: NamaPasien
+  - name: GolIKI
+  - name: ShiftJaga

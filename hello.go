@@ -5,7 +5,7 @@ import (
     "net/http"
 
 	"time"
-	"strconv"
+//	"strconv"
 
 	"appengine"
 	"appengine/datastore"
@@ -144,6 +144,7 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
    
    data := &DataPasien{
       NamaPasien: r.FormValue("namapts"),
+	  TglDaftar: CreateTime(),
    }
    
    kun := &KunjunganPasien{
@@ -356,43 +357,6 @@ func listPasien(w http.ResponseWriter, r *http.Request){
    	
 }
 
-
-
-func prosesIKI(w http.ResponseWriter, i,j,k int, n string, t time.Time) (int, int, int) {
-   dataJam := t.Format("2-01-2006")
-   d := ubahBulanIni(i)
-   s := strconv.Itoa(i)
-   
-   s = s+d.Format("-01-2006")
-   if s != dataJam {
-      //c, _ := t.AddDate()
-	  
-      fmt.Fprint(w, "<tr><td></td><td>"+s+"</td><td>")
-	  fmt.Fprint(w,j)
-	  fmt.Fprint(w, "</td><td>")
-	  fmt.Fprint(w, k)
-	  fmt.Fprintln(w, "</td><tr>")
-	  if n == "1"{
-	     j = 0
-		 j++
-		 i++
-	  }else{
-	     k = 0
-		 k++
-		 i++
-	  }
-	  
-	 }
-   if s == dataJam{
-      if n == "1"{
-	     j++
-	  }else{
-	     k++
-	  }
-	 }
-   return i,j,k
-}
-
 func listIKI(w http.ResponseWriter, r *http.Request){
    ctx := appengine.NewContext(r)
    
@@ -424,35 +388,46 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	  result[i] = iki
 	  i++
 	}
-	for j := 1; j<=len(result); j++{
-	   fmt.Fprint(w, j)
-	   fmt.Fprint(w, "  ")
-	   fmt.Fprint(w, result[j].GolIKI+"   ")
-	   fmt.Fprintln(w, result[j].TanggalFinal)
+	m := ubahBulanIni(0).Day()
 	
-	}
-	
-	
-//	fmt.Fprintln(w, result)
-	/*z := 1
-	iki1 := 0
-	iki2 := 0
-	for j := 1;j<=len(result);j++{
-	   
-	   f, g, h := prosesIKI(w, z, iki1, iki2, result[j].GolIKI, result[j].JamDatang)
-	   
-	   z = f
-	   iki1 = g
-	   iki2 = h
 
+	type sumIKI struct {
+	   Tanggal    string
+	   IKI1, IKI2 int
 	}
-      bulini := ubahBulanIni(z)
-      s := bulini.Format("2-01-2006")
-      fmt.Fprint(w, "<tr><td></td><td>"+s+"</td><td>")
-	  fmt.Fprint(w,iki1)
-	  fmt.Fprint(w, "</td><td>")
-	  fmt.Fprint(w, iki2)
-	  fmt.Fprintln(w, "</td><tr>")*/
+	
+	ikiBulan := []sumIKI{}
+	dataIKI := sumIKI{}
+	for h:= 1; h <=m;h++{
+	
+	   q := ubahBulanIni(h).Format("2-01-2006")
+	   var u1, u2 int
+	   for _, v :=  range result{
+	      if v.TanggalFinal != q {continue}
+		  if v.GolIKI == "1" {
+		     u1++
+		  }else{
+		     u2++
+		  }
+	   }
+	   
+	   if u1 == 0 && u2 == 0{continue}
+	   dataIKI.Tanggal = q
+	   dataIKI.IKI1 = u1
+	   dataIKI.IKI2 = u2
+	   ikiBulan = append(ikiBulan, dataIKI)
+	}
+	
+	for a, b := range ikiBulan{
+	
+	fmt.Fprint(w, "<tr><td>")
+	fmt.Fprint(w, a+1)
+	fmt.Fprint(w, "</td><td>"+b.Tanggal+"</td><td>")
+	fmt.Fprint(w, b.IKI1)
+	fmt.Fprint(w, "</td><td>")
+	fmt.Fprint(w, b.IKI2)
+	fmt.Fprint(w, "</td></tr>")
+    }
 }
 
 func getDatabyKey(item string, w http.ResponseWriter, r *http.Request) ListPasien {
