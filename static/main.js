@@ -86,7 +86,7 @@ $(document).ready(function(){
 		
 	})
 
-    //$("#number").html("gaga");
+    $("#number").html("gaga");
 	
 	$("#listpasien").on("click", "#editbtn", function(){
 		keynum = $("#editbtn").value();

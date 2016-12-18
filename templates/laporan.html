@@ -1,0 +1,48 @@
+{{define "title"}}
+<title>Laporan BCP</title>
+<script src="static/main.js"></script>
+<link rel="stylesheet" href="static/login.css">
+{{end}}
+
+{{define "body"}}
+
+<div class="container-fluid">
+	<div class="col-sm-2"></div>
+	<div class="col-sm-8">
+    <div class="panel panel-info">
+      <div class="panel-heading text-center">BCP</div>
+      <div class="panel-body">
+        <table class="table table-bordered table-responsive">
+            <thead>
+			<tr>
+              <th class="bg-success">No</th>
+              <th class="bg-success">Tanggal</th>
+              <th class="bg-success">No. CM</th>
+              <th class="bg-success">Nama Pasien</th>
+              <th class="bg-success">Diagnosis</th>
+              <th class="bg-success">IKI 1</th>
+              <th class="bg-success">IKI 2</th>
+            </tr>
+			</thead>
+			<tbody>
+               {{range $k, $v := r}}
+               <tr>
+               	<th></th>
+               	<th>{{$v.TanggalFinal}}</th>
+               	<th>{{$v.NomorCM}}</th>
+               	<th>{{$v.NamaPasien}}</th>
+               	<th>{{$v.Diagnosis}}</th>
+               	{{$v.TabelIKI}}
+               </tr>
+               {{end}}
+
+			</tbody>
+        </table>
+      </div>
+    </div>
+	</div>
+	<div class="col-sm-2"></div>
+</div>
+   
+
+{{end}}

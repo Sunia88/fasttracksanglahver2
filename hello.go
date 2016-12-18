@@ -36,6 +36,8 @@ func init() {
 	http.HandleFunc("/entri/update", updateEntri)
 	http.HandleFunc("/entri/del/", deleteEntri)
 	http.HandleFunc("/entri/delete", confirmDeleteEntri)
+	
+	//http.HandleFunc("/getlaporan/", buatBCP)
 
 }
 
@@ -59,6 +61,7 @@ type ListPasien struct {
    DataPasien
    KunjunganPasien
    TanggalFinal    string
+   TabelIKI string
 }
 
 func ubahBulanIni(d int) time.Time{
@@ -68,29 +71,6 @@ func ubahBulanIni(d int) time.Time{
 
 }
 
-/*
-func countIKI(tgl time.Time, counter int, iki string)(iki1, iki2, final string){
-   datatgl := tgl
-   hariIni := ubahBulanIni(i)
-   
-   if hariIni != datatgl {
-      Counter++
-	     if iki == "1" {
-		    Iki1 = 0
-			Iki1++
-		 }else{
-		    if iki == "2" {
-			Iki2 = 0
-			Iki2++
-			}
-		 }
-	if iki
-   }
-   
-   
-   
-
-} */
 
 func ubahTanggal(tgl time.Time, shift string) time.Time{
    
@@ -547,3 +527,82 @@ func confirmDeleteEntri(w http.ResponseWriter, r *http.Request){
 
    http.Redirect(w, r, "/mainpage", http.StatusSeeOther)   
 }
+
+/*
+func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) ListPasien{
+   ctx := appengine.NewContext(r)
+   
+   u := user.Current(ctx)
+   email := u.Email
+   
+   zone, err := time.LoadLocation("Asia/Makassar")
+   if err != nil{
+      fmt.Println("Err: ", err.Error())
+   }
+   in := time.Month(m)
+   monIn := time.Date(y, in, 1, 0, 0, 0, 0, zone)
+   monOut := monIn.AddDate(0, 1, 0)
+   
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email)
+
+   t := q.Run(ctx)
+   
+   var daf KunjunganPasien
+   var tar ListPasien
+   var pts DataPasien
+   for {
+      k, err := t.Next(&daf)
+      if err == datastore.Done{break}
+      if err != nil{
+         fmt.Fprintln(w, "Error Fetching Data: ", err)
+      }
+      
+      jam := ubahTanggal(daf.JamDatang, daf.ShiftJaga)
+      if jam.Before(monIn) == true{continue}
+      if jam.After(monOut) == true{continue}
+      
+      tar.TanggalFinal = jam.Format("2-01-2006")
+      
+      nocm := k.Parent()
+	  fmt.Fprintln(w, nocm)
+      tar.NomorCM = nocm.StringID()
+
+      err = datastore.Get(ctx, nocm, &pts)
+      if err != nil {
+            fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
+         }
+   
+      tar.NamaPasien = pts.NamaPasien
+	  tar.Diagnosis = daf.Diagnosis
+	  
+	  tar.LinkID = k.Encode()
+      
+      if daf.GolIKI == "1"{
+         tar.TabelIKI = `			
+                        <td class="text-center">&#x2714;</td>
+			<td class="text-center"></td> `
+         }else{
+         tar.TabelIKI = `
+		   	<td class="text-center"></td>
+			<td class="text-center">&#x2714;</td> `
+         }
+   }
+
+   return tar
+} 
+
+func buatBCP(w http.ResponseWriter, r *http.Request){
+   y, _ := strconv.Atoi(r.URL.Path[12:16])
+   m, _ := strconv.Atoi(r.URL.Path[17:19])
+   
+//   fmt.Fprintln(w, y)
+//   fmt.Fprintln(w, m)
+   
+   
+   list := getListPasien(w, r, m, y)
+
+   fmt.Fprintln(w, list)
+//   renderTemplate(w, "laporan", list)
+
+   
+} */
