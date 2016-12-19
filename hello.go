@@ -3,20 +3,13 @@ package main
 import (
 	"html/template"
     "net/http"
-//	"sort"
 	"time"
 	"strconv"
 	"strings"
-
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
-//    "appengine/memcache"
-	
     "fmt"
-	
-//	"encoding/json"
-
 )
 
 
@@ -66,9 +59,26 @@ type ListPasien struct {
    IKI1,IKI2 string
 }
 
+
+//---------------------------------------------------------------------------------
+//Daftar Fungsi Waktu
+func CreateTime() time.Time{
+   t := time.Now()
+   zone, err := time.LoadLocation("Asia/Makassar")
+   if err != nil{
+      fmt.Println("Err: ", err.Error())
+   }
+   jam :=t.In(zone)
+   return jam  
+}
+
 func ubahBulanIni(d int) time.Time{
    y, m, _ := time.Now().Date()
-   bulan := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+   zone, err := time.LoadLocation("Asia/Makassar")
+   if err != nil{
+      fmt.Println("Err: ", err.Error())
+   }
+   bulan := time.Date(y, m, d, 0, 0, 0, 0, zone)
    return bulan
 
 }
@@ -85,6 +95,9 @@ func ubahTanggal(tgl time.Time, shift string) time.Time{
    return ubah
 }
 
+
+//--------------------------------------------------------------------------------------------------
+//Daftar Fungsi Template
 func renderPasien(w http.ResponseWriter, data interface{}, tmp string ){
       tmpl, err := template.New("tempPasien").Parse(tmp)
 	  if err != nil {
@@ -93,17 +106,18 @@ func renderPasien(w http.ResponseWriter, data interface{}, tmp string ){
 	  tmpl.Execute(w, data)
 }
 
-func CreateTime() time.Time{
-   t := time.Now()
-   zone, err := time.LoadLocation("Asia/Makassar")
-   if err != nil{
-      fmt.Println("Err: ", err.Error())
+func renderTemplate(w http.ResponseWriter, r *http.Request, p interface{}, tmpls ...string){
+   tmp, _ := template.ParseFiles("templates/base.html")
+   
+   for _, v := range tmpls{
+      tmp, _ = template.Must(tmp.Clone()).ParseFiles("templates/"+v+".html")
    }
-   jam :=t.In(zone)
-   return jam  
+ 
+   tmp.Execute(w, p)
 }
 
-
+//-----------------------------------------------------------------------------------------------------------------
+//Fungsi Listing
 func listLaporan(w http.ResponseWriter, r *http.Request){
    ctx := appengine.NewContext(r)
    u := user.Current(ctx)
@@ -132,165 +146,78 @@ func listLaporan(w http.ResponseWriter, r *http.Request){
    }
 }
 
-   
-func renderTemplate(w http.ResponseWriter, r *http.Request, p interface{}, tmpls ...string){
-   tmp, _ := template.ParseFiles("templates/base.html")
 
-   
-   for _, v := range tmpls{
-      tmp, _ = template.Must(tmp.Clone()).ParseFiles("templates/"+v+".html")
-   }
- 
-   tmp.Execute(w, p)
-}
-
-func inputPasien(w http.ResponseWriter, r *http.Request){
-   if r.Method != "POST" {
-      http.Error(w, "Post request only", http.StatusMethodNotAllowed)
-	  return
-   }
-
+func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) []ListPasien{
    ctx := appengine.NewContext(r)
    
    u := user.Current(ctx)
-   doc := u.Email
+   email := u.Email
    
-   nocm := r.FormValue("nocm")
-   grandParentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-   parentKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, grandParentKey)
-   pasienKey := datastore.NewIncompleteKey(ctx, "KunjunganPasien", parentKey)
-   
-   data := &DataPasien{
-      NamaPasien: r.FormValue("namapts"),
-	  TglDaftar: CreateTime(),
+   zone, err := time.LoadLocation("Asia/Makassar")
+   if err != nil{
+      fmt.Println("Err: ", err.Error())
    }
+   in := time.Month(m)
+   monIn := time.Date(y, in, 1, 0, 0, 0, 0, zone)
+   monOut := monIn.AddDate(0, 1, 0)
    
-   kun := &KunjunganPasien{
-	  Diagnosis: r.FormValue("diag"),
-	  GolIKI: r.FormValue("iki"),
-	  ATS: r.FormValue("ats"),
-	  ShiftJaga: r.FormValue("shift"),
-	  JamDatang: CreateTime(),
-	  Dokter: doc,
-	}
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("JamDatang")
 
-  
-   if PasienAda == false {
-       if _, err := datastore.Put(ctx, parentKey, data);err != nil{
-            fmt.Fprint(w, "Error Database: %v", err)
-		    return
-	     }
-       if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
-           fmt.Fprint(w, "Error Database: %v", err)
-	       return
-         }
-      }else{
-	   if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
-           fmt.Fprint(w, "Error Database: %v", err)
-	       return
-         }
-	 
-   }
- 
-}
-
-func getCM(w http.ResponseWriter, r *http.Request){
-
-   tmpl, err := template.New("adaPasien").ParseFiles("templates/adapasien.html")
-   if err != nil {
-      fmt.Fprint(w, "Error Parsing Template: ", err)
-   }
+   t := q.Run(ctx)
    
-   adakah := &PasienAda
-   ctx := appengine.NewContext(r)
-   
-   nocm := r.FormValue("nocm");
-   
-   parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-   pasienKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, parentKey)
-   
-   q := datastore.NewQuery("DataPasien").Ancestor(pasienKey)
-   var pasien []DataPasien
-   t, err := q.GetAll(ctx, &pasien)
-   if err != nil {
-      fmt.Fprint(w, "Error Database: %v", err)
-	  return
-   }
-   if len(t) == 0{
-   
-         pts := DataPasien{}
-         tmpl.Execute(w, pts)
-		    *adakah = false
-	  }else{
-   for _, pts := range pasien {
-            tmpl.Execute(w, pts)
-			*adakah = true
-		  }
-	  }
-}
-
-
-func index(w http.ResponseWriter, r *http.Request) {
-   if r.Method != "GET" {
-      http.Error(w, "GET requests only", http.StatusMethodNotAllowed)
-	  return
-   }
-   
-   if r.URL.Path != "/" {
-      http.NotFound(w, r)
-	  return
-   }
-   
-   ctx := appengine.NewContext(r)
-
-   
-   var login string
-   
-   if u := user.Current(ctx); u != nil {
-      http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
-	   
-   } else {
-      login, _ = user.LoginURL(ctx, "/mainpage")
-      http.Redirect(w, r, login, http.StatusSeeOther)
+   var daf KunjunganPasien
+   var tar ListPasien
+   var pts DataPasien
+   var list []ListPasien
+   list = append(list, ListPasien{})
+   for {
+      k, err := t.Next(&daf)
+      if err == datastore.Done{break}
+      if err != nil{
+         fmt.Fprintln(w, "Error Fetching Data: ", err)
+      }
       
-   }
+      jam := ubahTanggal(daf.JamDatang, daf.ShiftJaga)
+      if jam.Before(monIn) == true{continue}
+      if jam.After(monOut) == true{continue}
+      
+      tar.TanggalFinal = jam.Format("2-01-2006")
+      
+      nocm := k.Parent()
+      tar.NomorCM = nocm.StringID()
 
-}
-
-func mainPage(w http.ResponseWriter, r *http.Request){
-
-   hariini := CreateTime()
-   bul := hariini.Format("1")
-   m, _ := strconv.Atoi(bul)
-   y := hariini.Year()
+      err = datastore.Get(ctx, nocm, &pts)
+      if err != nil {
+            continue
+			fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
+         }
    
+      tar.NamaPasien = properTitle(pts.NamaPasien)
+	  tar.Diagnosis = properTitle(daf.Diagnosis)
+	  
+	  tar.LinkID = k.Encode()
+      
+      if daf.GolIKI == "1"{
+         tar.IKI1 = "1"
+         tar.IKI2 = ""
+         }else{
+         tar.IKI1 = ""
+         tar.IKI2 = "1"
+		 }
+		 
+	  list = append(list, tar)
+   }
+   return list
+} 
+
+func buatBCP(w http.ResponseWriter, r *http.Request){
+   y, _ := strconv.Atoi(r.URL.Path[12:16])
+   m, _ := strconv.Atoi(r.URL.Path[17:19])
+
    list := getListPasien(w, r, m, y)
-   //sort.Reverse(sort.Interface(list))
+   renderTemplate(w, r, list, "laporan")
    
-   renderTemplate(w, r, list, "main", "listpts")
-}
-
-func getInfo(w http.ResponseWriter, r *http.Request){
-
-      type Person struct {
-	     NamaLengkap   string
-		 Logout        string
-	  }
-	  
-      ctx := appengine.NewContext(r)
-      
-      var logout, email string
-      u := user.Current(ctx)	  
-	  logout, _ = user.LogoutURL(ctx, "/")
-	  email = u.Email
-      
-	  p := &Person{
-	     NamaLengkap: email,
-		 Logout: logout,
-	  }
-	  
-      fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
-}
+} 
 
 func listIKI(w http.ResponseWriter, r *http.Request){
    ctx := appengine.NewContext(r)
@@ -363,6 +290,94 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	fmt.Fprint(w, b.IKI2)
 	fmt.Fprint(w, "</td></tr>")
     }
+}
+
+//---------------------------------------------------------------------------------------------
+//Fungsi Database   
+
+func inputPasien(w http.ResponseWriter, r *http.Request){
+   if r.Method != "POST" {
+      http.Error(w, "Post request only", http.StatusMethodNotAllowed)
+	  return
+   }
+
+   ctx := appengine.NewContext(r)
+   
+   u := user.Current(ctx)
+   doc := u.Email
+   
+   nocm := r.FormValue("nocm")
+   grandParentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+   parentKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, grandParentKey)
+   pasienKey := datastore.NewIncompleteKey(ctx, "KunjunganPasien", parentKey)
+   
+   data := &DataPasien{
+      NamaPasien: r.FormValue("namapts"),
+	  TglDaftar: CreateTime(),
+   }
+   
+   kun := &KunjunganPasien{
+	  Diagnosis: r.FormValue("diag"),
+	  GolIKI: r.FormValue("iki"),
+	  ATS: r.FormValue("ats"),
+	  ShiftJaga: r.FormValue("shift"),
+	  JamDatang: CreateTime(),
+	  Dokter: doc,
+	}
+
+  
+   if PasienAda == false {
+       if _, err := datastore.Put(ctx, parentKey, data);err != nil{
+            fmt.Fprint(w, "Error Database: %v", err)
+		    return
+	     }
+       if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
+           fmt.Fprint(w, "Error Database: %v", err)
+	       return
+         }
+      }else{
+	   if _, err := datastore.Put(ctx, pasienKey, kun); err != nil {
+           fmt.Fprint(w, "Error Database: %v", err)
+	       return
+         }
+	 
+   }
+   http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
+ 
+}
+
+
+//Fungsi ini mengecek apakah nomor CM pasien sudah ada
+//kemudian, jika sudah ada variabel globa PasienAda akan
+//diubah nilainya menjadi True, yang nantinya digunakan
+//untuk menentukan apakah struct DataPasien akan dimasukkan
+//ke database
+func getCM(w http.ResponseWriter, r *http.Request){
+
+   tmpl, err := template.New("adaPasien").ParseFiles("templates/adapasien.html")   //Parsing template untuk request ajax
+   if err != nil {
+      fmt.Fprint(w, "Error Parsing Template: ", err)
+   }
+   
+   adakah := &PasienAda 
+   ctx := appengine.NewContext(r)
+   
+   nocm := r.FormValue("nocm");
+   
+   parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+   pasienKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, parentKey)
+   
+   var pts DataPasien
+   err = datastore.Get(ctx, pasienKey, &pts)
+   if err != nil && err == datastore.ErrNoSuchEntity {
+         //pts := DataPasien{}
+         tmpl.Execute(w, pts)
+		    *adakah = false      
+   }else{
+   tmpl.Execute(w, pts)
+   *adakah = true
+   }  
+
 }
 
 func getDatabyKey(item string, w http.ResponseWriter, r *http.Request) ListPasien {
@@ -474,12 +489,78 @@ func confirmDeleteEntri(w http.ResponseWriter, r *http.Request){
 	 
    }
 
-   //fmt.Fprintln(w, r.FormValue("entri"))
-   
    err = datastore.Delete(ctx, keyKun)
 
    http.Redirect(w, r, "/mainpage", http.StatusSeeOther)   
 }
+
+//---------------------------------------------------------------------------------------
+//Fungsi Routing
+
+func index(w http.ResponseWriter, r *http.Request) {
+   if r.Method != "GET" {
+      http.Error(w, "GET requests only", http.StatusMethodNotAllowed)
+	  return
+   }
+   
+   if r.URL.Path != "/" {
+      http.NotFound(w, r)
+	  return
+   }
+   
+   ctx := appengine.NewContext(r)
+
+   
+   var login string
+   
+   if u := user.Current(ctx); u != nil {
+      http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
+	   
+   } else {
+      login, _ = user.LoginURL(ctx, "/mainpage")
+      http.Redirect(w, r, login, http.StatusSeeOther)
+      
+   }
+
+}
+
+func mainPage(w http.ResponseWriter, r *http.Request){
+
+   hariini := CreateTime()
+   bul := hariini.Format("1")
+   m, _ := strconv.Atoi(bul)
+   y := hariini.Year()
+   
+   list := getListPasien(w, r, m, y)
+   //sort.Reverse(sort.Interface(list))
+   
+   renderTemplate(w, r, list, "main", "listpts")
+}
+
+func getInfo(w http.ResponseWriter, r *http.Request){
+
+      type Person struct {
+	     NamaLengkap   string
+		 Logout        string
+	  }
+	  
+      ctx := appengine.NewContext(r)
+      
+      var logout, email string
+      u := user.Current(ctx)	  
+	  logout, _ = user.LogoutURL(ctx, "/")
+	  email = u.Email
+      
+	  p := &Person{
+	     NamaLengkap: email,
+		 Logout: logout,
+	  }
+	  
+      fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+//Fungsi Misc
 
 func properTitle(input string) string {
 	words := strings.Fields(input)
@@ -495,74 +576,3 @@ func properTitle(input string) string {
 	return strings.Join(words, " ")
 }
 
-func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) []ListPasien{
-   ctx := appengine.NewContext(r)
-   
-   u := user.Current(ctx)
-   email := u.Email
-   
-   zone, err := time.LoadLocation("Asia/Makassar")
-   if err != nil{
-      fmt.Println("Err: ", err.Error())
-   }
-   in := time.Month(m)
-   monIn := time.Date(y, in, 1, 0, 0, 0, 0, zone)
-   monOut := monIn.AddDate(0, 1, 0)
-   
-   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("JamDatang")
-
-   t := q.Run(ctx)
-   
-   var daf KunjunganPasien
-   var tar ListPasien
-   var pts DataPasien
-   var list []ListPasien
-   list = append(list, ListPasien{})
-   for {
-      k, err := t.Next(&daf)
-      if err == datastore.Done{break}
-      if err != nil{
-         fmt.Fprintln(w, "Error Fetching Data: ", err)
-      }
-      
-      jam := ubahTanggal(daf.JamDatang, daf.ShiftJaga)
-      if jam.Before(monIn) == true{continue}
-      if jam.After(monOut) == true{continue}
-      
-      tar.TanggalFinal = jam.Format("2-01-2006")
-      
-      nocm := k.Parent()
-      tar.NomorCM = nocm.StringID()
-
-      err = datastore.Get(ctx, nocm, &pts)
-      if err != nil {
-            continue
-			fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
-         }
-   
-      tar.NamaPasien = properTitle(pts.NamaPasien)
-	  tar.Diagnosis = properTitle(daf.Diagnosis)
-	  
-	  tar.LinkID = k.Encode()
-      
-      if daf.GolIKI == "1"{
-         tar.IKI1 = "1"
-         tar.IKI2 = ""
-         }else{
-         tar.IKI1 = ""
-         tar.IKI2 = "1"
-		 }
-		 
-	  list = append(list, tar)
-   }
-   return list
-} 
-
-func buatBCP(w http.ResponseWriter, r *http.Request){
-   y, _ := strconv.Atoi(r.URL.Path[12:16])
-   m, _ := strconv.Atoi(r.URL.Path[17:19])
-
-   list := getListPasien(w, r, m, y)
-   renderTemplate(w, r, list, "laporan")
-   
-} 

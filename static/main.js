@@ -61,6 +61,7 @@ $(document).ready(function(){
 				url:'inputdatapts',
 				data:"nocm="+nocm+"&namapts="+namapts+"&diag="+diag+"&ats="+ats+"&iki="+iki+"&shift="+shift,
 				success:function(){
+					location.reload();
 				}
 				
 			})

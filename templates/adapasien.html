@@ -1,11 +1,7 @@
 {{define "adaPasien"}}
 	  <div class="form-group">
 	     <label for="namalkp">Nama Pasien:</label>
-		 {{with .NamaPasien}}
-		 <input type="text" name="namapasien" id="namapts" class="form-control text-capitalize" value={{.}}>
-		 {{else}}
-		 <input type="text" name="namapasien" id="namapts" class="form-control text-capitalize">
-		 {{end}}
+		 <input type="text" name="namapasien" id="namapts" class="form-control text-capitalize" value={{.NamaPasien}}>
 	  </div>
 	  <div class="form-group">
 	     <label for="">Diagnosis:</label>
