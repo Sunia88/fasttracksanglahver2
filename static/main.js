@@ -68,29 +68,16 @@ $(document).ready(function(){
 		
 	})
 	
-	$("#listpasien").html(function(){
-		$.get("/getlist", function(data){
-			$("#listpasien").html(data)
-			
-		})
-		
-		
-	})
-	
 	$("#listiki").html(function(){
 		$.get("/getiki", function(data){
 			$("#listiki").html(data)
 			
 		})
-		
-		
 	})
-
-    $("#number").html("gaga");
 	
-	$("#listpasien").on("click", "#editbtn", function(){
-		keynum = $("#editbtn").value();
-		$("#btnval").html(keynum);
-	  });
-	
+	$("#dropdown").html(function(){
+		$.get("/getlaporan", function(data){
+			$("#dropdown").html(data)
+		})
+	})
 })

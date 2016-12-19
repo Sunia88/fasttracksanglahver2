@@ -24,15 +24,23 @@
               <th class="bg-success">IKI 2</th>
             </tr>
 			</thead>
-			<tbody>
-               {{range $k, $v := r}}
+			<tbody id="tabbody">
+               {{range $k, $v := .}}
+			   {{with $v.NomorCM}}
                <tr>
-               	<th></th>
-               	<th>{{$v.TanggalFinal}}</th>
-               	<th>{{$v.NomorCM}}</th>
-               	<th>{{$v.NamaPasien}}</th>
-               	<th>{{$v.Diagnosis}}</th>
-               	{{$v.TabelIKI}}
+               	<td>{{$k}}</td>
+               	<td>{{$v.TanggalFinal}}</td>
+               	<td>{{$v.NomorCM}}</td>
+               	<td>{{$v.NamaPasien}}</td>
+               	<td>{{$v.Diagnosis}}</td>
+                {{with $v.IKI1}}
+				<td class="text-center checkmark">&#x2714;</td>
+                <td class="text-center checkmark"></td>
+				{{else}}
+				<td class="text-center checkmark"></td>
+                <td class="text-center checkmark">&#x2714;</td>
+				{{end}}
+				{{end}}
                </tr>
                {{end}}
 

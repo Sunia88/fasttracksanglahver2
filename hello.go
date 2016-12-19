@@ -3,9 +3,10 @@ package main
 import (
 	"html/template"
     "net/http"
-
+//	"sort"
 	"time"
-//	"strconv"
+	"strconv"
+	"strings"
 
 	"appengine"
 	"appengine/datastore"
@@ -27,7 +28,7 @@ func init() {
 
 	http.HandleFunc("/getinfo", getInfo)
 	http.HandleFunc("/inputdatapts", inputPasien)
-	http.HandleFunc("/getlist", listPasien)
+
 	
 	http.HandleFunc("/getiki", listIKI)
 	//http.HandleFunc("/testdb", testdb)
@@ -37,7 +38,8 @@ func init() {
 	http.HandleFunc("/entri/del/", deleteEntri)
 	http.HandleFunc("/entri/delete", confirmDeleteEntri)
 	
-	//http.HandleFunc("/getlaporan/", buatBCP)
+	http.HandleFunc("/getlaporan", listLaporan)
+	http.HandleFunc("/getlaporan/", buatBCP)
 
 }
 
@@ -61,7 +63,7 @@ type ListPasien struct {
    DataPasien
    KunjunganPasien
    TanggalFinal    string
-   TabelIKI string
+   IKI1,IKI2 string
 }
 
 func ubahBulanIni(d int) time.Time{
@@ -100,10 +102,46 @@ func CreateTime() time.Time{
    jam :=t.In(zone)
    return jam  
 }
+
+
+func listLaporan(w http.ResponseWriter, r *http.Request){
+   ctx := appengine.NewContext(r)
+   u := user.Current(ctx)
+   email := u.Email
    
-func renderTemplate(w http.ResponseWriter, tmpl string, p interface{}){
-   t, _ := template.ParseFiles("templates/base.html", "templates/"+tmpl+".html")
-   t.Execute(w, p)
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Project("JamDatang").Order("JamDatang")
+   t := q.Run(ctx)
+   var iki ListPasien
+   _, err := t.Next(&iki)
+   if err !=nil {
+       fmt.Fprintln(w, "Error Fetching Data: ", err)
+   }
+
+   start := iki.JamDatang
+   awal := start.Format("2006/01")
+   dd := []string{awal}
+
+   tgl := CreateTime().Format("2006/01")
+
+   for awal != tgl {
+      awal = start.AddDate(0, 1, 0).Format("2006/01")
+      dd = append(dd, awal)
+   }
+   for _, v := range dd {
+   fmt.Fprintln(w, "<li class=\"text-center\"><a href=\"/getlaporan/"+v+"\">"+v+"</a></li>")
+   }
+}
+
+   
+func renderTemplate(w http.ResponseWriter, r *http.Request, p interface{}, tmpls ...string){
+   tmp, _ := template.ParseFiles("templates/base.html")
+
+   
+   for _, v := range tmpls{
+      tmp, _ = template.Must(tmp.Clone()).ParseFiles("templates/"+v+".html")
+   }
+ 
+   tmp.Execute(w, p)
 }
 
 func inputPasien(w http.ResponseWriter, r *http.Request){
@@ -220,7 +258,16 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func mainPage(w http.ResponseWriter, r *http.Request){
-   renderTemplate(w, "main", nil)
+
+   hariini := CreateTime()
+   bul := hariini.Format("1")
+   m, _ := strconv.Atoi(bul)
+   y := hariini.Year()
+   
+   list := getListPasien(w, r, m, y)
+   //sort.Reverse(sort.Interface(list))
+   
+   renderTemplate(w, r, list, "main", "listpts")
 }
 
 func getInfo(w http.ResponseWriter, r *http.Request){
@@ -243,98 +290,6 @@ func getInfo(w http.ResponseWriter, r *http.Request){
 	  }
 	  
       fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
-}
-
-//Fungsi untuk mendapatkan list pasien bulan ini
-func listPasien(w http.ResponseWriter, r *http.Request){
-   ctx := appengine.NewContext(r)
-   
-   u := user.Current(ctx)
-   email := u.Email
-   item := `<tr>
-            
-		 	<td class="text-right" id="number"></td>
-		 	<td class="text-right">{{.TanggalFinal}}</td>
-		 	<td class="text-right">{{.NomorCM}}</td>
-		 	<td class="text-left text-capitalize">{{.NamaPasien}}</td>
-		 	<td class="text-left text-capitalize">{{.Diagnosis}}</td>
-		 	{{template "iki"}}
-			<td class="text-center">
-		       <div class="btn-group btn-group-xs">
-			      <a href="/entri/edit/{{.LinkID}}" class="btn btn-info" role="button">Edit</a>
-				  <a href="/entri/del/{{.LinkID}}" class="btn btn-danger" role="button">Delete</a>
-			   </div>
-			   <span id="btnval"></span>
-			</td>
-		 </tr>`
-   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang").Limit(30)
-   
-   t := q.Run(ctx)
-   for {
-      var r ListPasien
-
-	  k, err := t.Next(&r)
-	  if err == datastore.Done{
-	     break
-	  }
-	  if err != nil{
-	     fmt.Fprint(w, "Error Fetching Data: ", err)
-		 break
-	  }
-	  
-	  jam := ubahTanggal(r.JamDatang, r.ShiftJaga)
-	  jamfinal := jam.Format("02-01-2006")
-	  r.TanggalFinal = jamfinal
-	  nocm := k.Parent()
-	  r.LinkID = k.Encode()
-	  r.NomorCM = nocm.StringID()
-	  
-	  nm:= datastore.NewQuery("DataPasien").Ancestor(nocm).Project("NamaPasien")
-	  c := nm.Run(ctx)
-	  var nama DataPasien
-	  _, err = c.Next(&nama)
-	  if err == datastore.Done{
-		 break
-	  }
-	  
-	  if err != nil{
-	     fmt.Fprint(w, "Error Cannot Resolve Query :", err)
-		 break
-	  }
-	  
-	  r.NamaPasien = nama.NamaPasien
-
-	  tmpl, err := template.New("tempPasien").Parse(item)
-	  if err != nil {
-	     fmt.Fprint(w, "Error Parsing: %v", err)
-	     }
-	  var tmpliki string
-	  if r.GolIKI == "1"{
-	  	tmpliki = `
-        {{define "iki"}}
-			<td class="text-center">&#x2714;</td>
-			<td class="text-center"></td>
-			{{end}}
-			`
-	  }else{
-	    tmpliki = `
-		{{define "iki"}}
-		   	<td class="text-center"></td>
-			<td class="text-center">&#x2714;</td>
-     	{{end}}
-       `	
-	  }
-	  
-	  tmplend, err := template.Must(tmpl.Clone()).Parse(tmpliki)
-	  if err != nil {
-	     fmt.Fprint(w, "Error Parsing Second template :", err)
-	  }
-	  
-	     tmplend.Execute(w, r)
-	  
-   }
-
-   	
 }
 
 func listIKI(w http.ResponseWriter, r *http.Request){
@@ -437,12 +392,10 @@ func getDatabyKey(item string, w http.ResponseWriter, r *http.Request) ListPasie
    return dataKun
 }
 
-
-
 func editEntri(w http.ResponseWriter, r *http.Request){
    keyitem := r.URL.Path[12:]
    editData := getDatabyKey(keyitem, w, r)
-   renderTemplate(w, "edit", editData)
+   renderTemplate(w, r, editData, "edit")
    
 }
 
@@ -498,7 +451,7 @@ func updateEntri(w http.ResponseWriter, r *http.Request){
 func deleteEntri(w http.ResponseWriter, r *http.Request){
    keyitem := r.URL.Path[11:]
    editData := getDatabyKey(keyitem, w, r)
-   renderTemplate(w, "delete", editData)
+   renderTemplate(w, r, editData, "delete")
 }
 
 func confirmDeleteEntri(w http.ResponseWriter, r *http.Request){
@@ -528,8 +481,21 @@ func confirmDeleteEntri(w http.ResponseWriter, r *http.Request){
    http.Redirect(w, r, "/mainpage", http.StatusSeeOther)   
 }
 
-/*
-func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) ListPasien{
+func properTitle(input string) string {
+	words := strings.Fields(input)
+	smallwords := " dan atau dr. "
+
+	for index, word := range words {
+		if strings.Contains(smallwords, " "+word+" ") {
+			words[index] = word
+		} else {
+			words[index] = strings.Title(word)
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) []ListPasien{
    ctx := appengine.NewContext(r)
    
    u := user.Current(ctx)
@@ -543,13 +509,15 @@ func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) ListPasien{
    monIn := time.Date(y, in, 1, 0, 0, 0, 0, zone)
    monOut := monIn.AddDate(0, 1, 0)
    
-   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email)
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("JamDatang")
 
    t := q.Run(ctx)
    
    var daf KunjunganPasien
    var tar ListPasien
    var pts DataPasien
+   var list []ListPasien
+   list = append(list, ListPasien{})
    for {
       k, err := t.Next(&daf)
       if err == datastore.Done{break}
@@ -564,45 +532,37 @@ func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) ListPasien{
       tar.TanggalFinal = jam.Format("2-01-2006")
       
       nocm := k.Parent()
-	  fmt.Fprintln(w, nocm)
       tar.NomorCM = nocm.StringID()
 
       err = datastore.Get(ctx, nocm, &pts)
       if err != nil {
-            fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
+            continue
+			fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
          }
    
-      tar.NamaPasien = pts.NamaPasien
-	  tar.Diagnosis = daf.Diagnosis
+      tar.NamaPasien = properTitle(pts.NamaPasien)
+	  tar.Diagnosis = properTitle(daf.Diagnosis)
 	  
 	  tar.LinkID = k.Encode()
       
       if daf.GolIKI == "1"{
-         tar.TabelIKI = `			
-                        <td class="text-center">&#x2714;</td>
-			<td class="text-center"></td> `
+         tar.IKI1 = "1"
+         tar.IKI2 = ""
          }else{
-         tar.TabelIKI = `
-		   	<td class="text-center"></td>
-			<td class="text-center">&#x2714;</td> `
-         }
+         tar.IKI1 = ""
+         tar.IKI2 = "1"
+		 }
+		 
+	  list = append(list, tar)
    }
-
-   return tar
+   return list
 } 
 
 func buatBCP(w http.ResponseWriter, r *http.Request){
    y, _ := strconv.Atoi(r.URL.Path[12:16])
    m, _ := strconv.Atoi(r.URL.Path[17:19])
-   
-//   fmt.Fprintln(w, y)
-//   fmt.Fprintln(w, m)
-   
-   
+
    list := getListPasien(w, r, m, y)
-
-   fmt.Fprintln(w, list)
-//   renderTemplate(w, "laporan", list)
-
+   renderTemplate(w, r, list, "laporan")
    
-} */
+} 

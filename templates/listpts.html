@@ -1,0 +1,26 @@
+{{define "listpts"}}
+   {{range $k, $v := .}}
+      {{with $v.NomorCM}}
+         <tr>
+            <td>{{$k}}</td>
+            <td>{{$v.TanggalFinal}}</td>
+            <td>{{$v.NomorCM}}</td>
+            <td>{{$v.NamaPasien}}</td>
+            <td>{{$v.Diagnosis}}</td>
+               {{with $v.IKI1}}
+			   <td class="text-center checkmark">&#x2714;</td>
+               <td class="text-center checkmark"></td>
+			   {{else}}
+			   <td class="text-center checkmark"></td>
+               <td class="text-center checkmark">&#x2714;</td>
+			   {{end}}
+			<td class="text-center">
+		       <div class="btn-group btn-group-xs">
+			      <a href="/entri/edit/{{$v.LinkID}}" class="btn btn-info" role="button">Edit</a>
+				  <a href="/entri/del/{{$v.LinkID}}" class="btn btn-danger" role="button">Delete</a>
+			   </div>
+			</td>
+	     </tr>
+      {{end}}
+   {{end}}
+{{end}}

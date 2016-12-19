@@ -19,6 +19,11 @@ indexes:
   properties:
   - name: Dokter
   - name: JamDatang
+
+- kind: KunjunganPasien
+  properties:
+  - name: Dokter
+  - name: JamDatang
   - name: GolIKI
   - name: ShiftJaga
 

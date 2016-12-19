@@ -55,8 +55,8 @@
   <div class="col-sm-10">
     <div class="panel panel-info">
       <div class="panel-heading text-center">Daftar Pasien Bulan</div>
-      <div class="panel-body">
-        <table class="table table-bordered table-responsive" id="tabelpasien">
+      <div class="panel-body table-responsive">
+        <table class="table table-bordered table-condensed" id="tabelpasien">
             <thead>
 			<tr>
               <th class="bg-success">No</th>
@@ -69,8 +69,8 @@
 			  <th class="bg-success">Edit/Delete</th>
             </tr>
 			</thead>
-			<tbody id="listpasien">
-
+			<tbody>
+            {{template "listpts" .}}
 			</tbody>
         </table>
       </div>
