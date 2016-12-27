@@ -8,6 +8,9 @@ handlers:
 - url: /.*
   script: _go_app
   login: required
+  
+- url: /_ah/remote_api
+  script: _go_app
 
 builtins:
-- remote_api: on
+- remote_api: on 

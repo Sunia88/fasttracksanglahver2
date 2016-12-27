@@ -10,6 +10,7 @@ import (
 	"appengine/datastore"
 	"appengine/user"
     "fmt"
+	_ "google.golang.org/appengine/remote_api"
 )
 
 
@@ -23,7 +24,7 @@ func init() {
 	http.HandleFunc("/inputdatapts", inputPasien)
 
 	
-	http.HandleFunc("/getiki", listIKI)
+	//http.HandleFunc("/getiki", listIKI)
 	//http.HandleFunc("/testdb", testdb)
 	
 	http.HandleFunc("/entri/edit/", editEntri)
@@ -31,7 +32,7 @@ func init() {
 	http.HandleFunc("/entri/del/", deleteEntri)
 	http.HandleFunc("/entri/delete", confirmDeleteEntri)
 	
-	http.HandleFunc("/getlaporan", listLaporan)
+	//http.HandleFunc("/getlaporan", listLaporan)
 	http.HandleFunc("/getlaporan/", buatBCP)
 
 }
@@ -52,6 +53,10 @@ type KunjunganPasien struct {
    Dokter                       string
 }
 
+type Kursor struct {
+   Point    string
+}
+
 type ListPasien struct {
    DataPasien
    KunjunganPasien
@@ -59,6 +64,17 @@ type ListPasien struct {
    IKI1,IKI2 string
 }
 
+type sumIKI struct {
+   Tanggal    string
+   IKI1, IKI2 int
+}
+
+type WebObject struct {
+   iki     []sumIKI
+   list    []ListPasien
+   kur     []Kursor
+
+}
 
 //---------------------------------------------------------------------------------
 //Daftar Fungsi Waktu
@@ -118,12 +134,21 @@ func renderTemplate(w http.ResponseWriter, r *http.Request, p interface{}, tmpls
 
 //-----------------------------------------------------------------------------------------------------------------
 //Fungsi Listing
-func listLaporan(w http.ResponseWriter, r *http.Request){
+
+func listLaporan(w http.ResponseWriter, r *http.Request)[]Kursor{
    ctx := appengine.NewContext(r)
-   u := user.Current(ctx)
-   email := u.Email
+   email, _, _ := appCtx(ctx, "", "", "", "")
+   _, key, _ := appCtx(ctx, "Dokter", email, "Kursor", "")
+   kur := []Kursor{}
+   q := datastore.NewQuery("Kursor").Ancestor(key)
+   _, err := q.GetAll(ctx, &kur)
+   if err != nil{
+      fmt.Fprintln(w, "Error Fetching Kursor :", err)
+   }
    
-   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Project("JamDatang").Order("JamDatang")
+   return kur
+   
+   /*q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Project("JamDatang").Order("JamDatang")
    t := q.Run(ctx)
    var iki ListPasien
    _, err := t.Next(&iki)
@@ -143,92 +168,32 @@ func listLaporan(w http.ResponseWriter, r *http.Request){
    }
    for _, v := range dd {
    fmt.Fprintln(w, "<li class=\"text-center\"><a href=\"/getlaporan/"+v+"\">"+v+"</a></li>")
-   }
+   }*/
 }
 
 
-func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) []ListPasien{
-   ctx := appengine.NewContext(r)
-   
-   u := user.Current(ctx)
-   email := u.Email
-   
-   zone, err := time.LoadLocation("Asia/Makassar")
-   if err != nil{
-      fmt.Println("Err: ", err.Error())
-   }
-   in := time.Month(m)
-   monIn := time.Date(y, in, 1, 0, 0, 0, 0, zone)
-   monOut := monIn.AddDate(0, 1, 0)
-   
-   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("JamDatang")
 
-   t := q.Run(ctx)
-   
-   var daf KunjunganPasien
-   var tar ListPasien
-   var pts DataPasien
-   var list []ListPasien
-   list = append(list, ListPasien{})
-   for {
-      k, err := t.Next(&daf)
-      if err == datastore.Done{break}
-      if err != nil{
-         fmt.Fprintln(w, "Error Fetching Data: ", err)
-      }
-      
-      jam := ubahTanggal(daf.JamDatang, daf.ShiftJaga)
-      if jam.Before(monIn) == true{continue}
-      if jam.After(monOut) == true{continue}
-      
-      tar.TanggalFinal = jam.Format("2-01-2006")
-      
-      nocm := k.Parent()
-      tar.NomorCM = nocm.StringID()
-
-      err = datastore.Get(ctx, nocm, &pts)
-      if err != nil {
-            continue
-			fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
-         }
-   
-      tar.NamaPasien = properTitle(pts.NamaPasien)
-	  tar.Diagnosis = properTitle(daf.Diagnosis)
-	  
-	  tar.LinkID = k.Encode()
-      
-      if daf.GolIKI == "1"{
-         tar.IKI1 = "1"
-         tar.IKI2 = ""
-         }else{
-         tar.IKI1 = ""
-         tar.IKI2 = "1"
-		 }
-		 
-	  list = append(list, tar)
-   }
-   return list
-} 
 
 func buatBCP(w http.ResponseWriter, r *http.Request){
    y, _ := strconv.Atoi(r.URL.Path[12:16])
    m, _ := strconv.Atoi(r.URL.Path[17:19])
 
-   list := getListPasien(w, r, m, y)
+   list := getListByCursor(w, r, m, y)
    renderTemplate(w, r, list, "laporan")
    
 } 
 
-func listIKI(w http.ResponseWriter, r *http.Request){
-   ctx := appengine.NewContext(r)
+func listIKI(w http.ResponseWriter, r *http.Request, m, y int){
+
+   list := getListPasien(w, r, m, y)
    
-   u := user.Current(ctx)
-   email := u.Email
+/*   ctx := appengine.NewContext(r)
+   email, _, _ := appCtx(ctx, "", "", "", "")
    awalBulan := ubahBulanIni(1)
    
    q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Project("JamDatang", "GolIKI", "ShiftJaga").Order("JamDatang").Limit(300)
    
-   t := q.Run(ctx)
+   t := q.Run(ctx) 
    result := make(map[int]ListPasien)   
    i := 1
    for{
@@ -249,22 +214,17 @@ func listIKI(w http.ResponseWriter, r *http.Request){
 	  iki.TanggalFinal = iki.JamDatang.Format("2-01-2006")
 	  result[i] = iki
 	  i++
-	}
-	m := ubahBulanIni(0).Day()
+	}*/
 	
+	bl := ubahBulanIni(0).Day()
 
-	type sumIKI struct {
-	   Tanggal    string
-	   IKI1, IKI2 int
-	}
-	
 	ikiBulan := []sumIKI{}
 	dataIKI := sumIKI{}
-	for h:= 1; h <=m;h++{
+	for h:= bl; h > 0; h--{
 	
 	   q := ubahBulanIni(h).Format("2-01-2006")
 	   var u1, u2 int
-	   for _, v :=  range result{
+	   for _, v :=  range list{
 	      if v.TanggalFinal != q {continue}
 		  if v.GolIKI == "1" {
 		     u1++
@@ -300,16 +260,11 @@ func inputPasien(w http.ResponseWriter, r *http.Request){
       http.Error(w, "Post request only", http.StatusMethodNotAllowed)
 	  return
    }
-
-   ctx := appengine.NewContext(r)
-   
-   u := user.Current(ctx)
-   doc := u.Email
    
    nocm := r.FormValue("nocm")
-   grandParentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-   parentKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, grandParentKey)
-   pasienKey := datastore.NewIncompleteKey(ctx, "KunjunganPasien", parentKey)
+   
+   ctx := appengine.NewContext(r)
+   doc, parentKey, pasienKey := appCtx(ctx,"DataPasien", nocm, "KunjunganPasien", "")
    
    data := &DataPasien{
       NamaPasien: r.FormValue("namapts"),
@@ -360,12 +315,10 @@ func getCM(w http.ResponseWriter, r *http.Request){
    }
    
    adakah := &PasienAda 
-   ctx := appengine.NewContext(r)
    
    nocm := r.FormValue("nocm");
-   
-   parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
-   pasienKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, parentKey)
+   ctx := appengine.NewContext(r)
+   _, pasienKey, _ := appCtx(ctx, "DataPasien", nocm, "", "")   
    
    var pts DataPasien
    err = datastore.Get(ctx, pasienKey, &pts)
@@ -497,6 +450,211 @@ func confirmDeleteEntri(w http.ResponseWriter, r *http.Request){
 //---------------------------------------------------------------------------------------
 //Fungsi Routing
 
+func getInfo(w http.ResponseWriter, r *http.Request){
+
+      type Person struct {
+	     NamaLengkap   string
+		 Logout        string
+	  }
+	  
+      ctx := appengine.NewContext(r)
+      
+      var logout, email string
+      u := user.Current(ctx)	  
+	  logout, _ = user.LogoutURL(ctx, "/")
+	  email = u.Email
+      
+	  p := &Person{
+	     NamaLengkap: email,
+		 Logout: logout,
+	  }
+	  
+      fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
+}
+
+
+//------------------------------------------------------------------------------------------------------------
+//MODEL
+
+
+func appCtx(ctx appengine.Context, kind1 string, id1 string, kind2 string, id2 string) (string, *datastore.Key, *datastore.Key){
+
+   u := user.Current(ctx)
+   email := u.Email
+   
+   gpKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
+   parKey := datastore.NewKey(ctx, kind1, id1, 0, gpKey)
+   chldKey := datastore.NewKey(ctx, kind2, id2, 0, parKey)
+
+   return email, parKey, chldKey
+}
+
+func createKursor(w http.ResponseWriter, ctx appengine.Context){
+
+   email, _, _ := appCtx(ctx, "", "", "", "")
+   wkt := CreateTime()
+   bul := wkt.Month()
+   th := wkt.Year()
+
+   tgl := wkt.Format("2006/01")
+   
+   _, _, kurKey := appCtx(ctx, "Dokter", email, "Kursor", tgl)
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
+   
+   kur := Kursor{}
+   listkur := []Kursor{}
+   
+   var kun KunjunganPasien
+
+   err := datastore.Get(ctx, kurKey, &kur)
+   if err != nil && err != datastore.ErrNoSuchEntity{
+      fmt.Fprintln(w, "Error Fetching Data Kursor: ", err)
+   }
+   if err != nil && err == datastore.ErrNoSuchEntity {
+      t := q.Run(ctx)
+
+      mon := time.Date(th, bul, 1, 0, 0, 0, 0, time.UTC)
+      for {
+         _, err := t.Next(&kun)
+	     if err == datastore.Done{break}
+	     if err != nil{
+	        fmt.Fprintln(w, "Error Fetching Data: ", err)
+	     }
+	     
+		 jamEdit := ubahTanggal(kun.JamDatang, kun.ShiftJaga)
+
+	     if jamEdit.After(mon) != true {
+	        cursor, _ := t.Cursor()
+		    kur.Point = cursor.String()
+			listkur = append(listkur, kur)
+			mon = mon.AddDate(0, -1, 0)
+			bln := mon.Format("2006/01")
+			_, _, keyKur := appCtx(ctx, "Dokter", email, "Kursor", bln)
+			if _, err := datastore.Put(ctx, keyKur, &kur); err != nil {
+			   fmt.Fprint(w, "Error Writing to Database: ", err)
+			}
+	     }
+      }
+   }   
+}
+func datebyInt(m, y int) time.Time{
+   zone, err := time.LoadLocation("Asia/Makassar")
+   if err != nil{
+      fmt.Println("Err: ", err.Error())
+   }
+   in := time.Month(m)
+   monIn := time.Date(y, in, 1, 0, 0, 0, 0, zone)
+   
+   return monIn
+}
+
+func getKursor(w http.ResponseWriter, ctx appengine.Context, tgl string) *datastore.Query{
+   email, _, _ := appCtx(ctx, "", "", "", "")
+   _, _, kurK := appCtx(ctx, "Dokter", email, "Kursor", tgl)
+
+   kur := Kursor{}
+   
+   err := datastore.Get(ctx, kurK, &kur)
+   if err != nil {
+      fmt.Fprintln(w, "Error Fetching Database Kursor :", err)
+      }
+   kursor, err := datastore.DecodeCursor(kur.Point)
+   if err != nil {
+      fmt.Fprintln(w, "Error Decoding Cursor :", err)
+      }
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
+   q = q.Start(kursor)
+
+   return q   
+}
+
+func iterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Query, mon time.Time) []ListPasien{
+   t := q.Run(ctx)
+   
+   var daf KunjunganPasien
+   var tar ListPasien
+   var pts DataPasien
+   var list []ListPasien
+   list = append(list, ListPasien{})
+   for {
+      k, err := t.Next(&daf)
+      if err == datastore.Done{break}
+      if err != nil{
+         fmt.Fprintln(w, "Error Fetching Data: ", err)
+      }
+      
+      jam := ubahTanggal(daf.JamDatang, daf.ShiftJaga)
+      if jam.Before(mon) == true{break}
+      
+      tar.TanggalFinal = jam.Format("2-01-2006")
+      
+      nocm := k.Parent()
+      tar.NomorCM = nocm.StringID()
+
+      err = datastore.Get(ctx, nocm, &pts)
+      if err != nil {
+            continue
+			fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
+         }
+   
+      tar.NamaPasien = properTitle(pts.NamaPasien)
+	  tar.Diagnosis = properTitle(daf.Diagnosis)
+	  
+	  tar.LinkID = k.Encode()
+      
+      if daf.GolIKI == "1"{
+         tar.IKI1 = "1"
+         tar.IKI2 = ""
+         }else{
+         tar.IKI1 = ""
+         tar.IKI2 = "1"
+		 }
+		 
+	  list = append(list, tar)
+   }
+   return list
+}
+func getListPasien(w http.ResponseWriter, r *http.Request, m,y int) []ListPasien{
+   ctx := appengine.NewContext(r)
+   email, _, _ := appCtx(ctx, "", "", "", "")
+   monIn := datebyInt(m,y)
+   q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
+   list := iterateList(ctx, w, q, monIn)
+   return list
+} 
+
+func getListByCursor(w http.ResponseWriter, r *http.Request, m, y int)[]ListPasien{
+   ctx := appengine.NewContext(r)
+   monIn := datebyInt(m,y)
+   tgl := monIn.Format("2006/01")
+   q := getKursor(w, ctx, tgl)
+   list := iterateList(ctx, w, q, monIn)
+   return list
+}
+
+
+//------------------------------------------------------------------------------------------------------------
+// VIEW
+
+
+func properTitle(input string) string {
+	words := strings.Fields(input)
+	smallwords := " dan atau dr. "
+
+	for index, word := range words {
+		if strings.Contains(smallwords, " "+word+" ") {
+			words[index] = word
+		} else {
+			words[index] = strings.Title(word)
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+//------------------------------------------------------------------------------------------------------------
+//CONTROLLER
+
+
 func index(w http.ResponseWriter, r *http.Request) {
    if r.Method != "GET" {
       http.Error(w, "GET requests only", http.StatusMethodNotAllowed)
@@ -536,43 +694,3 @@ func mainPage(w http.ResponseWriter, r *http.Request){
    
    renderTemplate(w, r, list, "main", "listpts")
 }
-
-func getInfo(w http.ResponseWriter, r *http.Request){
-
-      type Person struct {
-	     NamaLengkap   string
-		 Logout        string
-	  }
-	  
-      ctx := appengine.NewContext(r)
-      
-      var logout, email string
-      u := user.Current(ctx)	  
-	  logout, _ = user.LogoutURL(ctx, "/")
-	  email = u.Email
-      
-	  p := &Person{
-	     NamaLengkap: email,
-		 Logout: logout,
-	  }
-	  
-      fmt.Fprint(w, "<p>Selamat datang "+p.NamaLengkap+"<br>Klik <a href="+p.Logout+">di sini</a> untuk Logout.")
-}
-
-//-------------------------------------------------------------------------------------------------------------------
-//Fungsi Misc
-
-func properTitle(input string) string {
-	words := strings.Fields(input)
-	smallwords := " dan atau dr. "
-
-	for index, word := range words {
-		if strings.Contains(smallwords, " "+word+" ") {
-			words[index] = word
-		} else {
-			words[index] = strings.Title(word)
-		}
-	}
-	return strings.Join(words, " ")
-}
-
