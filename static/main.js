@@ -36,14 +36,6 @@ $(document).ready(function(){
 		}
 	});
 	
-	$("#infouser").html(function(){
-		$.get("/getinfo", function(data){
-			$("#infouser").html(data)
-		})
-		
-		
-	});
-	
 	$("#form1").on("click", "#btnsub", function(){
 		
 		var nocm = $("#nocm").val();
@@ -68,17 +60,5 @@ $(document).ready(function(){
 		}
 		
 	})
-	
-	$("#listiki").html(function(){
-		$.get("/getiki", function(data){
-			$("#listiki").html(data)
-			
-		})
-	})
-	
-	$("#dropdown").html(function(){
-		$.get("/getlaporan", function(data){
-			$("#dropdown").html(data)
-		})
-	})
+
 })

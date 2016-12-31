@@ -1,0 +1,56 @@
+{{define "title"}}
+<title>Laporan BCP</title>
+<script src="static/main.js"></script>
+<link rel="stylesheet" href="static/login.css">
+{{end}}
+
+{{define "body"}}
+
+<div class="container-fluid">
+	<div class="col-sm-1"></div>
+	<div class="col-sm-5">
+    <div class="panel panel-info">
+      <div class="panel-heading text-center">Data Staf Baru</div>
+      <div class="panel-body table-responsive">
+        <form action="/tambahstaf" method="post" role="form">
+          <div class="form-group" id="form1">
+            <label for="nocm">Email:</label><br>
+            <input type="text" name="nocm" id="nocm" class="form-control"><br>
+
+            <label for="nocm">Nama Lengkap:</label><br>
+            <input type="text" name="nmlkp" id="nmlkp" class="form-control"><br>
+          </div>
+        </form>
+      </div>
+    </div>
+	</div>
+	<div class="col-sm-5">
+		<div class="panel panel-info">
+			<div class="panel-heading text-center"></div>
+			<div class="panel-body table-responsive">
+				<table class="table table-bordered table-condensed">
+					<thead>
+						<tr>
+							<th class="bg-success">Email</th>
+							<th class="bg-success">Nama Lengkap</th>
+						</tr>
+					</thead>
+					<tbody>
+					{{with .}}
+					{{range .}}
+						<tr>
+							<td>{{.Email}}</td>
+							<td>{{.NamaLengkap}}</td>
+						</tr>
+					{{end}}
+					{{end}}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="col-sm-1"></div>
+</div>
+   
+
+{{end}}

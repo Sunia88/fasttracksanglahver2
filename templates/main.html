@@ -8,6 +8,7 @@
 <div class="container-fluid">	
    <div class="col-sm-4"></div>
    <div class="col-sm-4">
+      <p>Selamat datang {{.Email}}<br>Klik <a href={{.Logout}}>di sini</a> untuk Logout.</p>
       <div id="infouser" class="text-center"></div>
    </div>
    <div class="col-sm-4"></div>
@@ -42,7 +43,20 @@
             <th class="bg-success">IKI 2</th>
           </tr>
 		  </thead>
-		  <tbody id="listiki"></tbody>
+		  <tbody id="listiki">
+		  {{with .IKI}}
+		     {{range $k, $v := .}}
+			    {{if $v.Tanggal}}
+				<tr>
+			       <td>{{$k}}</td>
+		           <td>{{$v.Tanggal}}</td>
+		           <td>{{$v.IKI1}}</td>
+		           <td>{{$v.IKI2}}</td>				   
+				<tr>
+				{{end}}
+			 {{end}}
+		  {{end}}
+		  </tbody>
         </table>
       </div>
     </div>
@@ -70,7 +84,32 @@
             </tr>
 			</thead>
 			<tbody>
-            {{template "listpts" .}}
+			{{with .List}}
+			   {{range $m, $n := .}}
+			      {{if $n.NomorCM}}
+				     <tr>
+                        <td>{{$m}}</td>
+                        <td>{{$n.TanggalFinal}} ({{$n.ShiftJaga}})</td>
+                        <td>{{$n.NomorCM}}</td>
+                        <td>{{$n.NamaPasien}}</td>
+                        <td>{{$n.Diagnosis}}</td>
+                           {{if $n.IKI1}}
+			                  <td class="text-center checkmark">&#x2714;</td>
+                              <td class="text-center checkmark"></td>
+			               {{else}}
+			                  <td class="text-center checkmark"></td>
+                              <td class="text-center checkmark">&#x2714;</td>
+			               {{end}}
+			            <td class="text-center">
+		                   <div class="btn-group btn-group-xs">
+			                  <a href="/entri/edit/{{$n.LinkID}}" class="btn btn-info" role="button">Edit</a>
+				              <a href="/entri/del/{{$n.LinkID}}" class="btn btn-danger" role="button">Delete</a>
+			               </div>
+			            </td>
+	                 </tr>
+				  {{end}}
+			   {{end}}
+			   {{end}}
 			</tbody>
         </table>
       </div>

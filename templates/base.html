@@ -27,7 +27,12 @@
 				<li class="dropdown">
 				   <a class="dropdown-toggle" data-toggle="dropdown" href="/getlaporan">Laporan BCP Perbulan<span class="caret"></span></a>
 				     <ul class="dropdown-menu">
-				     	<span id="dropdown"></span>
+				     	{{with .Kur}}
+						   {{range .}}
+						      <li><a href="/getlaporan/{{.}}">{{.}}</a></li>
+						   {{end}}
+						{{end}}
+						<span id="dropdown"></span>
 				     </ul>
 				</li>
 			</ul>

@@ -5,6 +5,8 @@
 {{end}}
 
 {{define "body"}}
+{{range .List}}
+{{if .NamaPasien}}
 <script>
 $(document).ready(function(){
    $('input[name="ats"][value={{.ATS}}]').prop('checked', true);
@@ -53,6 +55,7 @@ $(document).ready(function(){
 	  <div class="col-sm-12">
 	  <input type="submit" value="Simpan Perubahan" id="subedit" class="btn btn-info">
 	  </div>
-	  
+   {{end}}	
+{{end}}	  
 </div>
 {{end}}
