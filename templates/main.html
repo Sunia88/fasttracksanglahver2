@@ -73,7 +73,6 @@
         <table class="table table-bordered table-condensed" id="tabelpasien">
             <thead>
 			<tr>
-              <th class="bg-success">No</th>
               <th class="bg-success">Tanggal</th>
               <th class="bg-success">No. CM</th>
               <th class="bg-success">Nama Pasien</th>
@@ -88,7 +87,6 @@
 			   {{range $m, $n := .}}
 			      {{if $n.NomorCM}}
 				     <tr>
-                        <td>{{$m}}</td>
                         <td>{{$n.TanggalFinal}} ({{$n.ShiftJaga}})</td>
                         <td>{{$n.NomorCM}}</td>
                         <td>{{$n.NamaPasien}}</td>

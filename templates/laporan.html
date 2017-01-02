@@ -7,8 +7,39 @@
 {{define "body"}}
 
 <div class="container-fluid">
-	<div class="col-sm-2"></div>
-	<div class="col-sm-8">
+	<div class="col-sm-1"></div>
+  <div class="col-sm-5">
+    <div class="panel panel-info">
+      <div class="panel-heading text-center">Tabel IKI</div>
+      <div class="panel-body">
+        <table class="table table-bordered table-responsive" id="tabeliki">
+          <thead>
+		  <tr>
+            <th class="bg-success">No.</th>
+            <th class="bg-success">Tanggal</th>
+            <th class="bg-success">IKI 1</th>
+            <th class="bg-success">IKI 2</th>
+          </tr>
+		  </thead>
+		  <tbody id="listiki">
+		  {{with .IKI}}
+		     {{range $k, $v := .}}
+			    {{if $v.Tanggal}}
+				<tr>
+			       <td>{{$k}}</td>
+		           <td>{{$v.Tanggal}}</td>
+		           <td>{{$v.IKI1}}</td>
+		           <td>{{$v.IKI2}}</td>				   
+				<tr>
+				{{end}}
+			 {{end}}
+		  {{end}}
+		  </tbody>
+        </table>
+      </div>
+    </div>
+  </div>	
+	<div class="col-sm-5">
     <div class="panel panel-info">
       <div class="panel-heading text-center">BCP</div>
       <div class="panel-body table-responsive">
@@ -51,7 +82,7 @@
       </div>
     </div>
 	</div>
-	<div class="col-sm-2"></div>
+	<div class="col-sm-1"></div>
 </div>
    
 

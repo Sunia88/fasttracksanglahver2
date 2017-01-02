@@ -88,9 +88,6 @@ func GetListByCursor(w http.ResponseWriter, r *http.Request, m, y int)[]ListPasi
    tgl := monIn.Format("2006/01")
    q := GetKursor(w, ctx, tgl)
    list := IterateList(ctx, w, q, monIn)
-   for i, j := 0, len(list)-1 ; i < j ; i, j = i+1, j-1{
-      list[i], list[j] = list[j], list[i]
-   }  
    return list
 }
 

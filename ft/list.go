@@ -52,7 +52,7 @@ func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Quer
    
       tar.NamaPasien = ProperTitle(pts.NamaPasien)
 	  tar.Diagnosis = ProperTitle(daf.Diagnosis)
-	  
+	  tar.ShiftJaga = daf.ShiftJaga
 	  tar.LinkID = k.Encode()
       
       if daf.GolIKI == "1"{
@@ -90,18 +90,20 @@ func ListLaporan(w http.ResponseWriter, r *http.Request)[]string{
    return list
 }
 
-func ListIKI(w http.ResponseWriter, r *http.Request, m, y int)[]SumIKI{
-   list := GetListPasien(w, r, m, y)
-   
-   bl := UbahBulanIni(0).Day()
+func ListIKI(w http.ResponseWriter, r *http.Request, m, y int, n []ListPasien)[]SumIKI{
+   for i, j := 0, len(n)-1;i < j; i,j = i+1, j-1 {
+      n[i], n[j] = n[j], n[i]
+   }
+   mo := DatebyInt(m, y)
+   bl := time.Date(mo.Year(), mo.Month(), 0, 0, 0, 0, 0, time.UTC).Day()
 
 	var ikiBulan []SumIKI
 	ikiBulan = append(ikiBulan, SumIKI{})
-	for h:= bl; h > 0; h--{
+	for h:= 1; h < bl; h++{
 	   dataIKI := SumIKI{}	
-	   q := UbahBulanIni(h).Format("2-01-2006")
+	   q := time.Date(mo.Year(), mo.Month(), h, 0, 0, 0, 0, time.UTC).Format("2-01-2006")
 	   var u1, u2 int
-	   for _, v :=  range list{
+	   for _, v :=  range n{
 	      if v.TanggalFinal != q {continue}
 		  if v.IKI1 == "1" {
 		     u1++
@@ -118,8 +120,5 @@ func ListIKI(w http.ResponseWriter, r *http.Request, m, y int)[]SumIKI{
 	   ikiBulan = append(ikiBulan, dataIKI)
 	}
     
-   for i, j := 0, len(ikiBulan)-1 ; i < j ; i, j = i+1, j-1{
-      ikiBulan[i], ikiBulan[j] = ikiBulan[j], ikiBulan[i]
-   }
 	return ikiBulan
 }
