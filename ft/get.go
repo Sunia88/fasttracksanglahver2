@@ -14,44 +14,44 @@ func GetCM(w http.ResponseWriter, r *http.Request, PasienAda bool){
    if err != nil {
       fmt.Fprint(w, "Error Parsing Template: ", err)
    }
-   
-   adakah := &PasienAda 
+
+   adakah := &PasienAda
    ctx := appengine.NewContext(r)
-   
+
    nocm := r.FormValue("nocm");
-   
+
    parentKey := datastore.NewKey(ctx, "IGD", "fasttrack", 0, nil)
    pasienKey := datastore.NewKey(ctx, "DataPasien", nocm, 0, parentKey)
-   
+
    var pts DataPasien
    err = datastore.Get(ctx, pasienKey, &pts)
    if err != nil && err == datastore.ErrNoSuchEntity {
          tmpl.Execute(w, pts)
-		    *adakah = false      
+		    *adakah = false
    }else{
    tmpl.Execute(w, pts)
    *adakah = true
-   }  
+   }
 
 }
 
 func GetDatabyKey(item string, w http.ResponseWriter, r *http.Request) ListPasien {
-   
+
    ctx := appengine.NewContext(r)
    dataKun := ListPasien{}
    keyKun, err := datastore.DecodeKey(item)
-   
+
    if err != nil {
          fmt.Fprintln(w, "Error Decoding Key: ", err)
       }
-   
+
    keyPts := keyKun.Parent()
-   
+
    err = datastore.Get(ctx, keyKun, &dataKun)
    if err != nil {
       fmt.Fprintln(w, "Error Fetching Data Kunjungan: ", err)
       }
-   
+
    err = datastore.Get(ctx, keyPts, &dataKun)
    if err != nil {
       fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
@@ -67,7 +67,7 @@ func GetKursor(w http.ResponseWriter, ctx appengine.Context, tgl string) *datast
    _, _, kurK := AppCtx(ctx, "Dokter", email, "Kursor", tgl)
 
    kur := Kursor{}
-   
+
    err := datastore.Get(ctx, kurK, &kur)
    if err != nil {
       fmt.Fprintln(w, "Error Fetching Database Kursor :", err)
@@ -79,7 +79,7 @@ func GetKursor(w http.ResponseWriter, ctx appengine.Context, tgl string) *datast
    q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
    q = q.Start(kursor)
 
-   return q   
+   return q
 }
 
 func GetListByCursor(w http.ResponseWriter, r *http.Request, m, y int)[]ListPasien{
@@ -98,4 +98,17 @@ func GetListPasien(w http.ResponseWriter, r *http.Request, m,y int) []ListPasien
    q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
    list := IterateList(ctx, w, q, monIn)
    return list
+}
+func GetStaff(ctx appengine.Context, email string) []Staff{
+  var staff []Staff
+  q := datastore.NewQuery("Staff")
+  k, err := q.GetAll(ctx, &staff)
+  for i, v := range k{
+    link := v.Encode()
+    staff[i].LinkID = link
+  }
+  if err != nil {
+    fmt.Println("Error Fetching Staff: ", err)
+  }
+  return staff
 }

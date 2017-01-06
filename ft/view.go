@@ -15,8 +15,8 @@ func RenderPasien(w http.ResponseWriter, data interface{}, tmp string ){
 }
 
 func RenderTemplate(w http.ResponseWriter, r *http.Request, p interface{}, tmpls ...string){
-   tmp := template.New("base")
-   tmp = tmp.Funcs(template.FuncMap{"strS": StringShift})   
+   funcs := template.FuncMap{"strS": StringShift}
+   tmp := template.New("base").Funcs(funcs)
    tmp, _ = template.ParseFiles("templates/base.html")
    for _, v := range tmpls{
       tmp, _ = template.Must(tmp.Clone()).ParseFiles("templates/"+v+".html")

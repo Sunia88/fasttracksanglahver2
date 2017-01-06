@@ -57,15 +57,15 @@
 			</thead>
 			<tbody id="tabbody">
 			{{with .List}}
-               {{range $k, $v := .}}
-			   {{if $v.NomorCM}}
+               {{range $m, $n := .}}
+			   {{if $n.NomorCM}}
                <tr>
                	<td>{{$k}}</td>
-               	<td>{{$v.TanggalFinal}} ({{$v.ShiftJaga}})</td>
-               	<td>{{$v.NomorCM}}</td>
-               	<td>{{$v.NamaPasien}}</td>
-               	<td>{{$v.Diagnosis}}</td>
-                {{if $v.IKI1}}
+               	<td>{{$n.TanggalFinal}} ({{$n.ShiftJaga}})</td>
+               	<td>{{$n.NomorCM}}</td>
+               	<td>{{$n.NamaPasien}}</td>
+               	<td>{{$n.Diagnosis}}</td>
+                {{if $n.IKI1}}
 				<td class="text-center checkmark">&#x2714;</td>
                 <td class="text-center checkmark"></td>
 				{{else}}

@@ -28,7 +28,6 @@ func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Quer
    var tar ListPasien
    var pts DataPasien
    var list []ListPasien
-   list = append(list, ListPasien{})
    for {
       k, err := t.Next(&daf)
       if err == datastore.Done{break}
@@ -65,6 +64,7 @@ func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Quer
 		 
 	  list = append(list, tar)
    }
+   
    return list
 }
 

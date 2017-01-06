@@ -6,6 +6,7 @@ import (
    "appengine"
    "appengine/datastore"
    "fmt"
+   "html/template"
 )
 
 type Kursor struct {
@@ -30,7 +31,28 @@ type WebObject struct {
    Email   string
    Logout  string
 }
-
+type Staff struct {
+  Email         string
+  NamaLengkap   string
+  LinkID        string
+}
+func AddStaff(w http.ResponseWriter, r *http.Request){
+  if r.Method != "POST" {
+     http.Error(w, "Post request only", http.StatusMethodNotAllowed)
+   return
+  }
+  ctx := appengine.NewContext(r)
+  var staff Staff
+  staff.NamaLengkap = r.FormValue("nama")
+  staff.Email = r.FormValue("email")
+  _, key, _ := AppCtx(ctx, "Staff", staff.Email, "", "")
+  if _, err := datastore.Put(ctx, key, &staff); err != nil{
+    fmt.Fprintln(w, "Error Creating Database: ", err)
+    return
+  }
+  time.Sleep(2000 * time.Millisecond)
+  http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
 
 func CreateKursor(w http.ResponseWriter, ctx appengine.Context){
 
@@ -40,13 +62,13 @@ func CreateKursor(w http.ResponseWriter, ctx appengine.Context){
    th := wkt.Year()
 
    tgl := wkt.Format("2006/01")
-   
+
    _, _, kurKey := AppCtx(ctx, "Dokter", email, "Kursor", tgl)
    q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
-   
+
    kur := Kursor{}
    listkur := []Kursor{}
-   
+
    var kun KunjunganPasien
 
    err := datastore.Get(ctx, kurKey, &kur)
@@ -63,7 +85,7 @@ func CreateKursor(w http.ResponseWriter, ctx appengine.Context){
 	     if err != nil{
 	        fmt.Fprintln(w, "Error Fetching Data: ", err)
 	     }
-	     
+
 		 jamEdit := UbahTanggal(kun.JamDatang, kun.ShiftJaga)
 
 	     if jamEdit.After(mon) != true {
@@ -78,32 +100,42 @@ func CreateKursor(w http.ResponseWriter, ctx appengine.Context){
 			}
 	     }
       }
-   }   
+   }
 }
-
+func ConfDel(w http.ResponseWriter, r *http.Request){
+  ctx := appengine.NewContext(r)
+  strKey := r.URL.Path[15:]
+  key, _ := datastore.DecodeKey(strKey)
+  err := datastore.Delete(ctx, key)
+  if err != nil{
+    fmt.Fprintln(w, "Error Deleting Entry: ", err)
+  }
+  time.Sleep(2000 * time.Millisecond)
+  http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
 func ConfirmDeleteEntri(w http.ResponseWriter, r *http.Request){
    if r.Method != "POST" {
       http.Error(w, "POST requests only", http.StatusMethodNotAllowed)
 	  return
    }
-   
+
    ctx := appengine.NewContext(r)
 
    keyKun, err := datastore.DecodeKey(r.FormValue("entri"))
    if err != nil {
       fmt.Fprintln(w, "Error Generating Key: ", err)
    }
-   
+
    var pts KunjunganPasien
    err = datastore.Get(ctx, keyKun, &pts)
    if err != nil {
      fmt.Fprintln(w, "Error Fetching Data: ", err)
-	 
+
    }
 
    err = datastore.Delete(ctx, keyKun)
 
-   http.Redirect(w, r, "/mainpage", http.StatusSeeOther)   
+   http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
 }
 
 func DeleteEntri(w http.ResponseWriter, r *http.Request){
@@ -113,13 +145,29 @@ func DeleteEntri(w http.ResponseWriter, r *http.Request){
    web.Kur = ListLaporan(w,r)
    RenderTemplate(w, r, web, "delete")
 }
+func DeletePage(w http.ResponseWriter, r *http.Request){
+  ctx := appengine.NewContext(r)
+  strKey := r.URL.Path[14:]
+  key, _ := datastore.DecodeKey(strKey)
+  staff := Staff{}
+  err := datastore.Get(ctx, key, &staff)
+  if err != nil{
+    fmt.Fprintln(w, "Error Fetching Staff: ", err)
+  }
+  staff.LinkID = strKey
+  tmp := template.Must(template.New("adminDel.html").ParseFiles("templates/adminDel.html"))
+  err = tmp.Execute(w, staff)
+  if err != nil {
+    fmt.Fprintln(w, "Error Executing Template: ", err)
+  }
 
+}
 func EditEntri(w http.ResponseWriter, r *http.Request){
    keyitem := r.URL.Path[12:]
    web := WebObject{}
    web.List = append(web.List, GetDatabyKey(keyitem, w, r))
    web.Kur = ListLaporan(w,r)
-   RenderTemplate(w, r, web, "edit")  
+   RenderTemplate(w, r, web, "edit")
 }
 
 func InputPasien(w http.ResponseWriter, r *http.Request, PasienAda bool){
@@ -130,14 +178,14 @@ func InputPasien(w http.ResponseWriter, r *http.Request, PasienAda bool){
 
    ctx := appengine.NewContext(r)
    nocm := r.FormValue("nocm")
-   doc, _, _ := AppCtx(ctx, "", "", "", "")   
+   doc, _, _ := AppCtx(ctx, "", "", "", "")
    _, parentKey, pasienKey := AppCtx(ctx, "DataPasien", nocm, "KunjunganPasien", "")
-   
+
    data := &DataPasien{
       NamaPasien: r.FormValue("namapts"),
 	  TglDaftar: CreateTime(),
    }
-   
+
    kun := &KunjunganPasien{
 	  Diagnosis: r.FormValue("diag"),
 	  GolIKI: r.FormValue("iki"),
@@ -147,7 +195,7 @@ func InputPasien(w http.ResponseWriter, r *http.Request, PasienAda bool){
 	  Dokter: doc,
 	}
 
-  
+
    if PasienAda == false {
        if _, err := datastore.Put(ctx, parentKey, data);err != nil{
             fmt.Fprint(w, "Error Database: %v", err)
@@ -162,10 +210,10 @@ func InputPasien(w http.ResponseWriter, r *http.Request, PasienAda bool){
            fmt.Fprint(w, "Error Database: %v", err)
 	       return
          }
-	 
+
    }
    http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
- 
+
 }
 
 
@@ -174,10 +222,10 @@ func UpdateEntri(w http.ResponseWriter, r *http.Request){
       http.Error(w, "POST requests only", http.StatusMethodNotAllowed)
 	  return
    }
-   
+
    ctx := appengine.NewContext(r)
 
-   kun := &KunjunganPasien{}   
+   kun := &KunjunganPasien{}
    pts := &DataPasien{}
 
    kun.LinkID = r.FormValue("entri")
@@ -185,8 +233,8 @@ func UpdateEntri(w http.ResponseWriter, r *http.Request){
    if err != nil {
       fmt.Fprintln(w, "Error Generating Key: ", err)
    }
-   keyPts := keyKun.Parent()   
-   
+   keyPts := keyKun.Parent()
+
    err = datastore.Get(ctx, keyKun, kun)
    if err != nil {
       fmt.Fprintln(w, "Error Fetching Data: ", err)
@@ -196,7 +244,7 @@ func UpdateEntri(w http.ResponseWriter, r *http.Request){
    kun.ATS = r.FormValue("ats")
    kun.GolIKI = r.FormValue("iki")
    kun.ShiftJaga = r.FormValue("shift")
-   
+
    err = datastore.Get(ctx, keyPts, pts)
    if err != nil {
       fmt.Fprintln(w, "Error Fetching Data: ", err)
@@ -204,16 +252,16 @@ func UpdateEntri(w http.ResponseWriter, r *http.Request){
    }
    pts.NamaPasien = r.FormValue("namapasien")
 
-   
+
    if _, err := datastore.Put(ctx, keyKun, kun); err != nil {
       fmt.Fprint(w, "Error Putting Data Kunjungan: ", err)
 	  return
    }
-   
+
    if _, err := datastore.Put(ctx, keyPts, pts); err != nil {
       fmt.Fprint(w, "Error Putting Data Pasien: ", err)
       return
    }
-   
+
    http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
 }

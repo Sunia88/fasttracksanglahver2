@@ -26,14 +26,13 @@
 				<li class="active"><a href="/mainpage">Home</a></li>
 				<li class="dropdown">
 				   <a class="dropdown-toggle" data-toggle="dropdown" href="/getlaporan">Laporan BCP Perbulan<span class="caret"></span></a>
-				     <ul class="dropdown-menu">
-				     	{{with .Kur}}
-						   {{range .}}
-						      <li><a href="/getlaporan/{{.}}">{{.}}</a></li>
-						   {{end}}
-						{{end}}
-						<span id="dropdown"></span>
-				     </ul>
+					  <ul class="dropdown-menu">
+						{{with .Kur}}
+							{{range .}}						
+						<li><a href="/getlaporan/{{.}}">{{.}}</a></li>
+			                  {{end}}
+ 			            {{end}}
+					</ul>
 				</li>
 			</ul>
 		</div>
