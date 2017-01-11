@@ -1,27 +1,26 @@
 package main
 
 import (
-    "net/http"
-	"time"
+	"fmt"
+	"ft"
+	"html/template"
+	"net/http"
 	"strconv"
+	"time"
+
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
-    "fmt"
-	"ft"
-  "html/template"
 )
-
 
 func init() {
 
-    http.HandleFunc("/", index)
+	http.HandleFunc("/", index)
 	http.HandleFunc("/mainpage", mainPage)
 	http.HandleFunc("/getcm", getCM)
 
 	//http.HandleFunc("/getinfo", getInfo)
 	http.HandleFunc("/inputdatapts", inPts)
-
 
 	//http.HandleFunc("/getiki", listIKI)
 	//http.HandleFunc("/testdb", testdb)
@@ -34,124 +33,125 @@ func init() {
 	//http.HandleFunc("/getlaporan", listLaporan)
 	http.HandleFunc("/getlaporan/", buatBCP)
 	http.HandleFunc("/admin", adminPage)
-  http.HandleFunc("/admin/addstaff", ft.AddStaff)
-  http.HandleFunc("/admin/delete/", ft.DeletePage)
-  http.HandleFunc("/admin/confdel/", ft.ConfDel)
+	http.HandleFunc("/admin/addstaff", ft.AddStaff)
+	http.HandleFunc("/admin/delete/", ft.DeletePage)
+	http.HandleFunc("/admin/confdel/", ft.ConfDel)
 
 }
 
 var PasienAda bool = false
 
-func inPts(w http.ResponseWriter, r *http.Request){
-   ft.InputPasien(w, r, PasienAda)
+func inPts(w http.ResponseWriter, r *http.Request) {
+	ft.InputPasien(w, r, PasienAda)
 }
 
-func getCM(w http.ResponseWriter, r *http.Request){
-   ft.GetCM(w, r, PasienAda)
+func getCM(w http.ResponseWriter, r *http.Request) {
+	ft.GetCM(w, r, PasienAda)
 }
+
 type DataPasien struct {
-   NamaPasien                   string
-   NomorCM, JenKel, Alamat      string
-   TglDaftar, Umur              time.Time
+	NamaPasien              string
+	NomorCM, JenKel, Alamat string
+	TglDaftar, Umur         time.Time
 }
 
 type KunjunganPasien struct {
-   Diagnosis, LinkID            string
-   GolIKI, ATS, ShiftJaga       string
-   JamDatang                    time.Time
-   Dokter                       string
+	Diagnosis, LinkID      string
+	GolIKI, ATS, ShiftJaga string
+	JamDatang              time.Time
+	Dokter                 string
 }
 
 type ListPasien struct {
-   DataPasien
-   KunjunganPasien
-   TanggalFinal    string
-   IKI1,IKI2 string
+	DataPasien
+	KunjunganPasien
+	TanggalFinal string
+	IKI1, IKI2   string
 }
 
 type Kursor struct {
-   Point    string
+	Point string
 }
 
 type sumIKI struct {
-   Tanggal    string
-   IKI1, IKI2 int
+	Tanggal    string
+	IKI1, IKI2 int
 }
 
 type WebObject struct {
-   IKI     []ft.SumIKI
-   List    []ft.ListPasien
-   Kur     []string
-   Email   string
-   Logout  string
+	IKI    []ft.SumIKI
+	List   []ft.ListPasien
+	Kur    []string
+	Email  string
+	Logout string
 }
 
 type Staff struct {
-  Email         string
-  NamaLengkap   string
-  LinkID        string
+	Email       string
+	NamaLengkap string
+	LinkID      string
 }
 type Web struct {
-  Welcome, Link, LinkStr     string
-  Staff                     []ft.Staff
+	Welcome, Link, LinkStr string
+	Staff                  []ft.Staff
 }
 
-func adminPage(w http.ResponseWriter, r *http.Request){
-  ctx := appengine.NewContext(r)
-  u := user.Current(ctx)
-  login, _ := user.LoginURL(ctx, "/")
-  logout, _ := user.LogoutURL(ctx, "/")
-  var web Web
-  if u.Admin{
-    web.Welcome = "Welcome Admin-san"
-    web.Link = logout
-    web.LinkStr = "Logout"
-    tmp := template.Must(template.New("adminOk.html").ParseFiles("templates/adminOk.html"))
-    n := ft.GetStaff(ctx, u.Email)
-    web.Staff = n
-    err := tmp.Execute(w, web)
-    if err != nil {
-      fmt.Fprintln(w, "Error Parsing Template :", err)
-    }
-    }else{
-      web.Welcome = "Admin login only"
-      web.Link = login
-      web.LinkStr = "Login"
-      tmp := template.Must(template.New("adminNil.html").ParseFiles("templates/adminNil.html"))
-      err := tmp.Execute(w, web)
-      if err != nil {
-        fmt.Fprintln(w, "Error Parsing Template :", err)
-      }
-    }
+func adminPage(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+	u := user.Current(ctx)
+	login, _ := user.LoginURL(ctx, "/")
+	logout, _ := user.LogoutURL(ctx, "/")
+	var web Web
+	if u.Admin {
+		web.Welcome = "Welcome Admin-san"
+		web.Link = logout
+		web.LinkStr = "Logout"
+		tmp := template.Must(template.New("adminOk.html").ParseFiles("templates/adminOk.html"))
+		n := ft.GetStaff(ctx, u.Email)
+		web.Staff = n
+		err := tmp.Execute(w, web)
+		if err != nil {
+			fmt.Fprintln(w, "Error Parsing Template :", err)
+		}
+	} else {
+		web.Welcome = "Admin login only"
+		web.Link = login
+		web.LinkStr = "Login"
+		tmp := template.Must(template.New("adminNil.html").ParseFiles("templates/adminNil.html"))
+		err := tmp.Execute(w, web)
+		if err != nil {
+			fmt.Fprintln(w, "Error Parsing Template :", err)
+		}
+	}
 }
-func buatBCP(w http.ResponseWriter, r *http.Request){
-   y, _ := strconv.Atoi(r.URL.Path[12:16])
-   m, _ := strconv.Atoi(r.URL.Path[17:19])
+func buatBCP(w http.ResponseWriter, r *http.Request) {
+	y, _ := strconv.Atoi(r.URL.Path[12:16])
+	m, _ := strconv.Atoi(r.URL.Path[17:19])
 
-   var web WebObject
-   //k := []ft.ListPasien{}
-   web.Kur = ft.ListLaporan(w,r)
-   x := ft.GetListByCursor(w, r, m, y)
-   web.IKI = ft.ListIKI(w, r, m, y, x)
-   /*for i := 0 ; i <= len(x); i++{
-      k = append(k, x[i])
-   }*/
-   web.List = x
-   ft.RenderTemplate(w, r, web, "laporan")
+	var web WebObject
+	//k := []ft.ListPasien{}
+	web.Kur = ft.ListLaporan(w, r)
+	x := ft.GetListByCursor(w, r, m, y)
+	web.IKI = ft.ListIKI(w, r, m, y, x)
+	/*for i := 0 ; i <= len(x); i++{
+	   k = append(k, x[i])
+	}*/
+	web.List = x
+	ft.RenderTemplate(w, r, web, "laporan")
 
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-   if r.Method != "GET" {
-      http.Error(w, "Post requests only", http.StatusMethodNotAllowed)
-	  return
-   }
+	if r.Method != "GET" {
+		http.Error(w, "Post requests only", http.StatusMethodNotAllowed)
+		return
+	}
 
-   if r.URL.Path != "/" {
-      http.NotFound(w, r)
-	  return
-   }
-   const maaf1 string = `
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	const maaf1 string = `
 <html>
 <head>
 <title>Welcome</title>
@@ -160,52 +160,51 @@ func index(w http.ResponseWriter, r *http.Request) {
 <p>Maaf anda tidak dapat mengakses aplikasi. Silahkan hubungi admin</p><br>
 <a href=`
 
-const maaf2 string = `
+	const maaf2 string = `
 >Logout</a>
 </body>
 </html>
    `
-   ctx := appengine.NewContext(r)
-//   var login string
-   if u := user.Current(ctx); !u.Admin{
-     email, _, _ := ft.AppCtx(ctx, "", "", "", "")
-     _, key, _ := ft.AppCtx(ctx, "Staff", email, "", "")
-     logout, _ := user.LogoutURL(ctx, "/")
-//     login, _ := user.LoginURL(ctx, "/")
+	ctx := appengine.NewContext(r)
+	//   var login string
+	if u := user.Current(ctx); !u.Admin {
+		email, _, _ := ft.AppCtx(ctx, "", "", "", "")
+		_, key, _ := ft.AppCtx(ctx, "Staff", email, "", "")
+		logout, _ := user.LogoutURL(ctx, "/")
+		//     login, _ := user.LoginURL(ctx, "/")
 
-     var staff Staff
-     err := datastore.Get(ctx, key, &staff)
-     if err != nil {
-       fmt.Fprintln(w, maaf1+logout+maaf2)
-     }else{
-       http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
-     }
-   }
-   if u := user.Current(ctx); u.Admin {
-      http.Redirect(w, r, "/admin", http.StatusSeeOther)
-   }
-   //http.Redirect(w, r, login, http.StatusSeeOther)
+		var staff Staff
+		err := datastore.Get(ctx, key, &staff)
+		if err != nil {
+			fmt.Fprintln(w, maaf1+logout+maaf2)
+		} else {
+			http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
+		}
+	}
+	if u := user.Current(ctx); u.Admin {
+		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	}
 }
 
-func mainPage(w http.ResponseWriter, r *http.Request){
+func mainPage(w http.ResponseWriter, r *http.Request) {
 
-   ctx := appengine.NewContext(r)
-   hariini := ft.CreateTime()
-   bul := hariini.Format("1")
-   m, _ := strconv.Atoi(bul)
-   y := hariini.Year()
+	ctx := appengine.NewContext(r)
+	hariini := ft.CreateTime()
+	bul := hariini.Format("1")
+	m, _ := strconv.Atoi(bul)
+	y := hariini.Year()
 
-   if hariini.Day() == 1 && hariini.Hour() > 8{
-      ft.CreateKursor(w,ctx)
-	  }
-   email, _, _ := ft.AppCtx(ctx, "", "", "", "")
+	if hariini.Day() == 1 && hariini.Hour() > 8 {
+		ft.CreateKursor(w, ctx)
+	}
+	email, _, _ := ft.AppCtx(ctx, "", "", "", "")
 
-   web := WebObject{}
-   web.List = ft.GetListPasien(w, r, m, y)
-   web.IKI = ft.ListIKI(w, r, m, y, web.List)
-   web.Kur = ft.ListLaporan(w,r)
-   web.Email = email
-   logout, _ := user.LogoutURL(ctx, "/")
-   web.Logout = logout
-   ft.RenderTemplate(w, r, web, "main")
+	web := WebObject{}
+	web.List = ft.GetListPasien(w, r, m, y)
+	web.IKI = ft.ListIKI(w, r, m, y, web.List)
+	web.Kur = ft.ListLaporan(w, r)
+	web.Email = email
+	logout, _ := user.LogoutURL(ctx, "/")
+	web.Logout = logout
+	ft.RenderTemplate(w, r, web, "main")
 }
