@@ -29,7 +29,7 @@
 			       <td>{{$k}}</td>
 		           <td>{{$v.Tanggal}}</td>
 		           <td>{{$v.IKI1}}</td>
-		           <td>{{$v.IKI2}}</td>				   
+		           <td>{{$v.IKI2}}</td>
 				<tr>
 				{{end}}
 			 {{end}}
@@ -38,7 +38,7 @@
         </table>
       </div>
     </div>
-  </div>	
+  </div>
 	<div class="col-sm-5">
     <div class="panel panel-info">
       <div class="panel-heading text-center">BCP</div>
@@ -60,7 +60,7 @@
                {{range $m, $n := .}}
 			   {{if $n.NomorCM}}
                <tr>
-               	<td>{{$k}}</td>
+               	<td>{{$m}}</td>
                	<td>{{$n.TanggalFinal}} ({{$n.ShiftJaga}})</td>
                	<td>{{$n.NomorCM}}</td>
                	<td>{{$n.NamaPasien}}</td>
@@ -84,6 +84,6 @@
 	</div>
 	<div class="col-sm-1"></div>
 </div>
-   
+
 
 {{end}}

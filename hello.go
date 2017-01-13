@@ -129,14 +129,13 @@ func buatBCP(w http.ResponseWriter, r *http.Request) {
 	m, _ := strconv.Atoi(r.URL.Path[17:19])
 
 	var web WebObject
-	//k := []ft.ListPasien{}
 	web.Kur = ft.ListLaporan(w, r)
 	x := ft.GetListByCursor(w, r, m, y)
 	web.IKI = ft.ListIKI(w, r, m, y, x)
-	/*for i := 0 ; i <= len(x); i++{
-	   k = append(k, x[i])
-	}*/
-	web.List = x
+	var k []ft.ListPasien
+	k = append(k, ft.ListPasien{})
+	k = append(k, x...)
+	web.List = k
 	ft.RenderTemplate(w, r, web, "laporan")
 
 }

@@ -11,14 +11,11 @@
   {{template "title"}}
 </head>
 <body>
-  <div class="container-fluid">
 		<a href="/mainpage">
 		<div class="jumbotron">
-		    
-			<h1>Fasttracksanglah.com</h1><small>Tools pencatat IKI</small>
+      <img class="img-responsive" src="static/e.jpg" alt="Emergency Room">
 		</div>
 		</a>
-	</div>
 	<nav class="navbar navbar-default">
 		<div class="container-fluid">
 			<div class="navbar-header"><a href="/mainpage" class="navbar-brand">FastTrack</a></div>
@@ -28,7 +25,7 @@
 				   <a class="dropdown-toggle" data-toggle="dropdown" href="/getlaporan">Laporan BCP Perbulan<span class="caret"></span></a>
 					  <ul class="dropdown-menu">
 						{{with .Kur}}
-							{{range .}}						
+							{{range .}}
 						<li><a href="/getlaporan/{{.}}">{{.}}</a></li>
 			                  {{end}}
  			            {{end}}
@@ -37,7 +34,7 @@
 			</ul>
 		</div>
 	</nav>
-	
+
 	{{template "body" .}}
 </body>
 </html>
