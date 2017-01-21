@@ -24,6 +24,7 @@ type KunjunganPasien struct {
 	GolIKI, ATS, ShiftJaga string
 	JamDatang              time.Time
 	Dokter                 string
+	Hide                   bool
 }
 type WebObject struct {
 	IKI    []SumIKI
@@ -66,7 +67,7 @@ func CreateKursor(w http.ResponseWriter, ctx appengine.Context) {
 	tgl := wkt.Format("2006/01")
 
 	_, _, kurKey := AppCtx(ctx, "Dokter", email, "Kursor", tgl)
-	q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Order("-JamDatang")
+	q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Filter("Hide =", false).Order("-JamDatang")
 
 	kur := Kursor{}
 	listkur := []Kursor{}
@@ -136,8 +137,15 @@ func ConfirmDeleteEntri(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Error Fetching Data: ", err)
 
 	}
-
-	err = datastore.Delete(ctx, keyKun)
+	//pts.Hide di ubah nilainya menjadi true, agar tidak
+	//mengubah data asli
+	pts.Hide = true
+	//datastore.Put untuk mengupdate dengan pts.Hide yang sudah
+	//diubah nilainya
+	_, err = datastore.Put(ctx, keyKun, &pts)
+	if err != nil {
+		fmt.Fprintln(w, "Error writing to database: ", err)
+	}
 
 	http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
 }

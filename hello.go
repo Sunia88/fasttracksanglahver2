@@ -60,6 +60,7 @@ type KunjunganPasien struct {
 	GolIKI, ATS, ShiftJaga string
 	JamDatang              time.Time
 	Dokter                 string
+	Hide                   bool
 }
 
 type ListPasien struct {
