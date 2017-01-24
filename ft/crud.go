@@ -25,6 +25,7 @@ type KunjunganPasien struct {
 	JamDatang              time.Time
 	Dokter                 string
 	Hide                   bool
+	JamDatangRiil          time.Time
 }
 type WebObject struct {
 	IKI    []SumIKI
@@ -199,12 +200,13 @@ func InputPasien(w http.ResponseWriter, r *http.Request, PasienAda bool) {
 	}
 
 	kun := &KunjunganPasien{
-		Diagnosis: r.FormValue("diag"),
-		GolIKI:    r.FormValue("iki"),
-		ATS:       r.FormValue("ats"),
-		ShiftJaga: r.FormValue("shift"),
-		JamDatang: CreateTime(),
-		Dokter:    doc,
+		Diagnosis:     r.FormValue("diag"),
+		GolIKI:        r.FormValue("iki"),
+		ATS:           r.FormValue("ats"),
+		ShiftJaga:     r.FormValue("shift"),
+		JamDatang:     CreateTime(),
+		JamDatangRiil: CreateTime(),
+		Dokter:        doc,
 	}
 
 	if PasienAda == false {
