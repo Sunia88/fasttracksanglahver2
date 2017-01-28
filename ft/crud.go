@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"time"
 
 	"appengine"
@@ -119,6 +120,43 @@ func ConfDel(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(2000 * time.Millisecond)
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
+func UpdateTanggal(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "POST request only", http.StatusMethodNotAllowed)
+		return
+	}
+	tz, _ := time.LoadLocation("Asia/Makassar")
+	tanggal := r.FormValue("tanggal")
+	y, _ := strconv.Atoi(tanggal[:4])
+	m, _ := strconv.Atoi(tanggal[5:7])
+	d, _ := strconv.Atoi(tanggal[8:10])
+	jam := r.FormValue("jam")
+	h, _ := strconv.Atoi(jam[:2])
+	min, _ := strconv.Atoi(jam[3:5])
+	ctx := appengine.NewContext(r)
+
+	keyKun, err := datastore.DecodeKey(r.FormValue("entri"))
+	if err != nil {
+		fmt.Fprintln(w, "Error Generating Key: ", err)
+	}
+
+	var pts KunjunganPasien
+	err = datastore.Get(ctx, keyKun, &pts)
+	if err != nil {
+		fmt.Fprintln(w, "Error Fetching Data: ", err)
+
+	}
+
+	mo := DatebyInt(m, y)
+	tglBaru := time.Date(mo.Year(), mo.Month(), d, h, min, 0, 0, tz)
+
+	pts.JamDatang = tglBaru
+
+	if _, err := datastore.Put(ctx, keyKun, &pts); err != nil {
+		fmt.Fprintf(w, "Error Writing to Database: %v", err)
+	}
+	http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
+}
 func ConfirmDeleteEntri(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "POST requests only", http.StatusMethodNotAllowed)
@@ -157,6 +195,13 @@ func DeleteEntri(w http.ResponseWriter, r *http.Request) {
 	web.List = append(web.List, GetDatabyKey(keyitem, w, r))
 	web.Kur = ListLaporan(w, r)
 	RenderTemplate(w, r, web, "delete")
+}
+func EditDate(w http.ResponseWriter, r *http.Request) {
+	keyitem := r.URL.Path[16:]
+	web := WebObject{}
+	web.List = append(web.List, GetDatabyKey(keyitem, w, r))
+	web.Kur = ListLaporan(w, r)
+	RenderTemplate(w, r, web, "editdate")
 }
 func DeletePage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
@@ -225,7 +270,7 @@ func InputPasien(w http.ResponseWriter, r *http.Request, PasienAda bool) {
 		}
 
 	}
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(5000 * time.Millisecond)
 	http.Redirect(w, r, "/mainpage", http.StatusSeeOther)
 
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"appengine"
 	"appengine/datastore"
@@ -96,8 +97,15 @@ func GetListPasien(w http.ResponseWriter, r *http.Request, m, y int) []ListPasie
 	ctx := appengine.NewContext(r)
 	email, _, _ := AppCtx(ctx, "", "", "", "")
 	monIn := DatebyInt(m, y)
+	yr := strconv.Itoa(y)
+	mo := strconv.Itoa(m)
 	q := datastore.NewQuery("KunjunganPasien").Filter("Dokter =", email).Filter("Hide =", false).Order("-JamDatang")
 	list := IterateList(ctx, w, q, monIn)
+	/*for k, v := range list {
+		if v.TanggalFinal[3:] != (mo + "-" + yr) {
+			list = append(list[:k], list[k+1:]...)
+		}
+	}*/
 	return list
 }
 func GetStaff(ctx appengine.Context, email string) []Staff {

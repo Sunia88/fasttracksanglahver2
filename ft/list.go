@@ -43,7 +43,7 @@ func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Quer
 		if daf.Hide == true {
 			continue
 		}
-		tar.TanggalFinal = jam.Format("2-01-2006")
+		tar.TanggalFinal = jam.Format("02-01-2006")
 
 		nocm := k.Parent()
 		tar.NomorCM = nocm.StringID()

@@ -29,6 +29,8 @@ func init() {
 	http.HandleFunc("/entri/update", ft.UpdateEntri)
 	http.HandleFunc("/entri/del/", ft.DeleteEntri)
 	http.HandleFunc("/entri/delete", ft.ConfirmDeleteEntri)
+	http.HandleFunc("/entri/editdate/", ft.EditDate)
+	http.HandleFunc("/entri/updatetanggal", ft.UpdateTanggal)
 
 	//http.HandleFunc("/getlaporan", listLaporan)
 	http.HandleFunc("/getlaporan/", buatBCP)
