@@ -3,6 +3,7 @@ package ft
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"appengine"
@@ -23,7 +24,7 @@ type SumIKI struct {
 
 func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Query, mon time.Time) []ListPasien {
 	t := q.Run(ctx)
-
+	monAf := mon.AddDate(0, 1, 0)
 	var daf KunjunganPasien
 	var tar ListPasien
 	var pts DataPasien
@@ -37,6 +38,9 @@ func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Quer
 			fmt.Fprintln(w, "Error Fetching Data: ", err)
 		}
 		jam := UbahTanggal(daf.JamDatang, daf.ShiftJaga)
+		if jam.After(monAf) == true {
+			continue
+		}
 		if jam.Before(mon) == true {
 			break
 		}
@@ -99,13 +103,14 @@ func ListIKI(w http.ResponseWriter, r *http.Request, m, y int, n []ListPasien) [
 		n[i], n[j] = n[j], n[i]
 	}
 	mo := DatebyInt(m, y)
-	bl := time.Date(mo.Year(), mo.Month(), 0, 0, 0, 0, 0, time.UTC).Day()
-
+	wkt := time.Date(mo.Year(), mo.Month(), 1, 0, 0, 0, 0, time.UTC)
+	strbl := wkt.AddDate(0, 1, -1).Format("2")
+	bl, _ := strconv.Atoi(strbl)
 	var ikiBulan []SumIKI
 	ikiBulan = append(ikiBulan, SumIKI{})
-	for h := 1; h < bl; h++ {
+	for h := 1; h <= bl; h++ {
 		dataIKI := SumIKI{}
-		q := time.Date(mo.Year(), mo.Month(), h, 0, 0, 0, 0, time.UTC).Format("2-01-2006")
+		q := time.Date(mo.Year(), mo.Month(), h, 0, 0, 0, 0, time.UTC).Format("02-01-2006")
 		var u1, u2 int
 		for _, v := range n {
 			if v.TanggalFinal != q {

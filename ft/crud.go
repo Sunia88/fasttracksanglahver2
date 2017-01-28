@@ -125,16 +125,17 @@ func UpdateTanggal(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "POST request only", http.StatusMethodNotAllowed)
 		return
 	}
-	tz, _ := time.LoadLocation("Asia/Makassar")
+	//tz, _ := time.LoadLocation("Asia/Makassar")
 	tanggal := r.FormValue("tanggal")
 	y, _ := strconv.Atoi(tanggal[:4])
 	m, _ := strconv.Atoi(tanggal[5:7])
 	d, _ := strconv.Atoi(tanggal[8:10])
 	jam := r.FormValue("jam")
-	h, _ := strconv.Atoi(jam[:2])
-	min, _ := strconv.Atoi(jam[3:5])
+	h, _ := strconv.Atoi(jam[11:13])
+	min, _ := strconv.Atoi(jam[14:16])
+	det, _ := strconv.Atoi(jam[17:19])
 	ctx := appengine.NewContext(r)
-
+	//02-01-2006 15:04:05
 	keyKun, err := datastore.DecodeKey(r.FormValue("entri"))
 	if err != nil {
 		fmt.Fprintln(w, "Error Generating Key: ", err)
@@ -148,7 +149,7 @@ func UpdateTanggal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mo := DatebyInt(m, y)
-	tglBaru := time.Date(mo.Year(), mo.Month(), d, h, min, 0, 0, tz)
+	tglBaru := time.Date(mo.Year(), mo.Month(), d, h, min, det, 0, time.UTC)
 
 	pts.JamDatang = tglBaru
 
@@ -200,6 +201,8 @@ func EditDate(w http.ResponseWriter, r *http.Request) {
 	keyitem := r.URL.Path[16:]
 	web := WebObject{}
 	web.List = append(web.List, GetDatabyKey(keyitem, w, r))
+	wkt := web.List[0].JamDatangRiil
+	web.List[0].TanggalFinal = wkt.Format("02-01-2006 15:04:05")
 	web.Kur = ListLaporan(w, r)
 	RenderTemplate(w, r, web, "editdate")
 }

@@ -52,11 +52,13 @@ $(document).ready(function(){
 	  </div>
 	  </div>
     <div class="col-sm-12">
+      <p>Tanggal Asli : {{.TanggalFinal}}</p>
+    </div>
+    <div class="col-sm-12">
     <div class="form-group">
       <label for="">Ubah Tanggal: </label><br>
       <input type="date" name="tanggal" id=""><br>
-      <label for="">Ubah Jam</label><br>
-      <input type="time" name="jam" id="">
+      <input type="hidden" name="jam" id="" value="{{.TanggalFinal}}">
     </div>
     </div>
 	  <div class="col-sm-12">

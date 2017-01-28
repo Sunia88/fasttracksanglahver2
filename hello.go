@@ -38,6 +38,7 @@ func init() {
 	http.HandleFunc("/admin/addstaff", ft.AddStaff)
 	http.HandleFunc("/admin/delete/", ft.DeletePage)
 	http.HandleFunc("/admin/confdel/", ft.ConfDel)
+	http.HandleFunc("/test", test)
 
 }
 
@@ -209,4 +210,34 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	logout, _ := user.LogoutURL(ctx, "/")
 	web.Logout = logout
 	ft.RenderTemplate(w, r, web, "main")
+}
+
+func test(w http.ResponseWriter, r *http.Request) {
+
+	ctx := appengine.NewContext(r)
+	hariini := ft.CreateTime()
+	bul := hariini.Format("1")
+	m, _ := strconv.Atoi(bul)
+	y := hariini.Year()
+
+	if hariini.Day() == 1 && hariini.Hour() > 8 {
+		ft.CreateKursor(w, ctx)
+	}
+	email, _, _ := ft.AppCtx(ctx, "", "", "", "")
+
+	web := WebObject{}
+	web.List = ft.GetListPasien(w, r, m, y)
+	web.IKI = ft.ListIKI(w, r, m, y, web.List)
+	web.Kur = ft.ListLaporan(w, r)
+	web.Email = email
+	logout, _ := user.LogoutURL(ctx, "/")
+	web.Logout = logout
+	days := time.Date(2016, time.February, 1, 0, 0, 0, 0, time.UTC)
+	jml := days.AddDate(0, 1, -1).Format("2")
+	fmt.Fprintln(w, jml)
+	fmt.Fprintln(w, days)
+	for _, v := range web.List {
+		fmt.Fprintln(w, v.TanggalFinal)
+	}
+
 }

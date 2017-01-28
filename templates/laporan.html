@@ -52,12 +52,13 @@
               <th class="bg-success">Diagnosis</th>
               <th class="bg-success">IKI 1</th>
               <th class="bg-success">IKI 2</th>
+							<th class="bg-success">Ubah Tanggal</th>
             </tr>
 			</thead>
 			<tbody id="tabbody">
 			{{with .List}}
-               {{range $m, $n := .}}
-			   {{if $n.NomorCM}}
+         {{range $m, $n := .}}
+			     {{if $n.NomorCM}}
                <tr>
                	<td>{{$m}}</td>
                	<td>{{$n.TanggalFinal}} ({{$n.ShiftJaga}})</td>
@@ -65,16 +66,21 @@
                	<td>{{$n.NamaPasien}}</td>
                	<td>{{$n.Diagnosis}}</td>
                 {{if $n.IKI1}}
-				<td class="text-center checkmark">&#x2714;</td>
-                <td class="text-center checkmark"></td>
-				{{else}}
-				<td class="text-center checkmark"></td>
-                <td class="text-center checkmark">&#x2714;</td>
-				{{end}}
-				{{end}}
+				           <td class="text-center checkmark">&#x2714;</td>
+                   <td class="text-center checkmark"></td>
+				        {{else}}
+				           <td class="text-center checkmark"></td>
+                   <td class="text-center checkmark">&#x2714;</td>
+				        {{end}}
+									 <td class="text-center">
+		                   <div class="btn-group btn-group-xs">
+			                    <a href="/entri/editdate/{{$n.LinkID}}" class="btn btn-info" role="button">Ubah Tanggal</a>
+			                 </div>
+			            </td>
+				   {{end}}
                </tr>
-               {{end}}
-			   {{end}}
+        {{end}}
+		 {{end}}
 
 			</tbody>
         </table>
