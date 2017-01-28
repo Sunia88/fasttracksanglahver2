@@ -18,6 +18,13 @@ indexes:
 - kind: KunjunganPasien
   properties:
   - name: Dokter
+  - name: Hide
+  - name: JamDatang
+    direction: desc
+
+- kind: KunjunganPasien
+  properties:
+  - name: Dokter
   - name: JamDatang
 
 - kind: KunjunganPasien
