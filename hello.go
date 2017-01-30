@@ -18,7 +18,6 @@ func init() {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/mainpage", mainPage)
 	http.HandleFunc("/getcm", getCM)
-
 	//http.HandleFunc("/getinfo", getInfo)
 	http.HandleFunc("/inputdatapts", inPts)
 
@@ -38,6 +37,7 @@ func init() {
 	http.HandleFunc("/admin/addstaff", ft.AddStaff)
 	http.HandleFunc("/admin/delete/", ft.DeletePage)
 	http.HandleFunc("/admin/confdel/", ft.ConfDel)
+	http.HandleFunc("/getdetail/", getDetailPts)
 	http.HandleFunc("/test", test)
 
 }
@@ -59,11 +59,11 @@ type DataPasien struct {
 }
 
 type KunjunganPasien struct {
-	Diagnosis, LinkID      string
-	GolIKI, ATS, ShiftJaga string
-	JamDatang              time.Time
-	Dokter                 string
-	Hide                   bool
+	Diagnosis, LinkID        string
+	GolIKI, ATS, ShiftJaga   string
+	JamDatang, JamDatangRiil time.Time
+	Dokter                   string
+	Hide                     bool
 }
 
 type ListPasien struct {
@@ -89,7 +89,16 @@ type WebObject struct {
 	Email  string
 	Logout string
 }
-
+type DetailPts struct {
+	Pts          DataPasien
+	Kunjungan    []DafKunjungan
+	Logout, Link string
+	Kur          []string
+}
+type DafKunjungan struct {
+	Diagnosis, TglKun, Dokter string
+	IKI                       bool
+}
 type Staff struct {
 	Email       string
 	NamaLengkap string
@@ -211,7 +220,46 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	web.Logout = logout
 	ft.RenderTemplate(w, r, web, "main")
 }
-
+func getDetailPts(w http.ResponseWriter, r *http.Request) {
+	nocm := r.URL.Path[11:]
+	ctx := appengine.NewContext(r)
+	var web DetailPts
+	var dat DataPasien
+	_, key, _ := ft.AppCtx(ctx, "DataPasien", nocm, "", "")
+	err := datastore.Get(ctx, key, &dat)
+	if err != nil {
+		fmt.Fprintln(w, err)
+	}
+	web.Pts = dat
+	var list []DafKunjungan
+	var satu DafKunjungan
+	var item KunjunganPasien
+	q := datastore.NewQuery("KunjunganPasien").Ancestor(key).Filter("Hide =", false)
+	t := q.Run(ctx)
+	for {
+		_, err := t.Next(&item)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			fmt.Fprintln(w, err)
+		}
+		satu.TglKun = item.JamDatangRiil.Format("20-10-2006 15:04")
+		if item.GolIKI == "1" {
+			satu.IKI = true
+		} else {
+			satu.IKI = false
+		}
+		satu.Diagnosis = item.Diagnosis
+		satu.Dokter = item.Dokter
+		list = append(list, satu)
+	}
+	web.Kunjungan = list
+	web.Logout, _ = user.LogoutURL(ctx, "/")
+	web.Link = key.Encode()
+	web.Kur = ft.ListLaporan(w, r)
+	ft.RenderTemplate(w, r, web, "detailpts")
+}
 func test(w http.ResponseWriter, r *http.Request) {
 
 	ctx := appengine.NewContext(r)

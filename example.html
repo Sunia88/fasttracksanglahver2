@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  <title>Detail Pasien</title>
+  <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+		<a href="/mainpage">
+		<div class="jumbotron">
+      <img class="img-responsive" src="/static/e.jpg" alt="Emergency Room">
+		</div>
+		</a>
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<div class="navbar-header"><a href="/mainpage" class="navbar-brand">FastTrack</a></div>
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="/mainpage">Home</a></li>
+				<li class="dropdown">
+				   <a class="dropdown-toggle" data-toggle="dropdown" href="/getlaporan">Laporan BCP Perbulan<span class="caret"></span></a>
+					  <ul class="dropdown-menu">
+					</ul>
+          </li>
+          <li class="dropdown"><a href="/createpdf" class="dropdown-toggle" data-toggle="dropdown">Buat Laporan (PDF)<span class="caret"></span></a>
+          <ul class="dropdown-menu">
+          </ul>
+				</li>
+			</ul>
+		</div>
+	</nav>
+
+  <div class="container-fluid">
+  	<div class="col-sm-1"></div>
+    <div class="col-sm-10">
+    	<div class="panel panel-primary">
+    		<div class="panel-heading">Detail Pasien</div>
+    		<div class="panel-body">
+          {{with .DataPasien}}
+          {{range .}}
+    			<h4>Nama Pasien:</h4>
+          <p>{{.NamaPasien}}</p>
+          <h4>Alamat:</h4>
+          {{with .Alamat}}
+          <p>{{.}}</p>
+          {{else}}
+          <p>Belum dilengkapi</p>
+          {{end}}
+          <h4>Tanggal Lahir (Umur):</h4>
+          {{with .Umur}}
+          <p>{{.}}</p>
+          {{else}}
+          <p>Belum dilengkapi</p>
+          {{end}}
+          <h4>Jenis Kelamin: </h4>
+          {{with .JenKel}}
+          <p>{{.}}</p>
+          {{else}}
+          <p>Belum dilengkapi</p>
+          {{end}}
+    		</div>
+    		<div class="panel-footer"><a href="/ubahpts/" class="btn btn-info" role="button" value="{{.Link}}">Ubah Data Pasien</a></div>
+        {{end}}
+        {{end}}
+    	</div>
+    </div>
+  	<div class="col-sm-1"></div>
+  </div>
+  <div class="container-fluid">
+  	<div class="col-sm-1"></div>
+  	<div class="col-sm-10">
+      <div class="panel panel-info">
+        <div class="panel-heading text-center">Kunjungan Pasien</div>
+        <div class="panel-body table-responsive">
+          <table class="table table-bordered table-condensed">
+              <thead>
+  			<tr>
+                <th class="bg-success">No</th>
+                <th class="bg-success">Tanggal - Jam</th>
+                <th class="bg-success">Diagnosis</th>
+                <th class="bg-success">IKI 1</th>
+                <th class="bg-success">IKI 2</th>
+  							<th class="bg-success">Dokter</th>
+              </tr>
+  			</thead>
+  			<tbody id="tabbody">
+          {{with .Kunjungan}}
+             {{range $m, $n := .}}
+               {{if $n.NomorCM}}
+                   <tr>
+                    <td>{{$m}}</td>
+                    <td>{{$n.TanggalFinal}}</td>
+                    <td>{{$n.Diagnosis}}</td>
+                    {{if $n.IKI1}}
+                       <td class="text-center checkmark">&#x2714;</td>
+                       <td class="text-center checkmark"></td>
+                    {{else}}
+                       <td class="text-center checkmark"></td>
+                       <td class="text-center checkmark">&#x2714;</td>
+                    {{end}}
+                       <td class="text-center">
+                         {{$n.Dokter}}
+                      </td>
+               {{end}}
+                   </tr>
+            {{end}}
+          {{end}}
+
+  			</tbody>
+          </table>
+        </div>
+      </div>
+  	</div>
+  	<div class="col-sm-1"></div>
+  </div>
+
+</body>
+</html>
