@@ -12,7 +12,6 @@
 			<div class="panel-heading">Detail Pasien</div>
 			<div class="panel-body">
 				 {{with .Pts}}
-				    {{range .}}
 				       <h4>Nama Pasien:</h4>
 				       <p>{{.NamaPasien}}</p>
 				       <h4>Alamat:</h4>
@@ -21,20 +20,19 @@
 				           {{else}}
 				              <p>Belum dilengkapi</p>
 				           {{end}}
-				      <h4>Tanggal Lahir (Umur):</h4>
+				       <h4>Tanggal Lahir (Umur):</h4>
 				           {{if .Umur}}
 				              <p>{{.Umur}}</p>
 				           {{else}}
 				              <p>Belum dilengkapi</p>
 				           {{end}}
-				     <h4>Jenis Kelamin: </h4>
+				       <h4>Jenis Kelamin: </h4>
 				           {{if .JenKel}}
 				              <p>{{.JenKel}}</p>
 				           {{else}}
 				              <p>Belum dilengkapi</p>
 				           {{end}}
-			     {{end}}
-			 {{end}}
+				{{end}}
 			 </div>
 			 <div class="panel-footer"><a href="/ubahpts/{{.Link}}" class="btn btn-info" role="button">Ubah Data Pasien</a></div>
 
@@ -77,11 +75,10 @@
 										 <td class="text-center">
 											 {{$n.Dokter}}
 										</td>
-						 {{end}}
-								 </tr>
+									</tr>
+							{{end}}
 					{{end}}
 				{{end}}
-
 			</tbody>
 				</table>
 			</div>

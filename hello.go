@@ -231,8 +231,9 @@ func getDetailPts(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err)
 	}
 	web.Pts = dat
+	web.Pts.NamaPasien = ft.ProperTitle(dat.NamaPasien)
 	var list []DafKunjungan
-	var satu DafKunjungan
+	var daf DafKunjungan
 	var item KunjunganPasien
 	q := datastore.NewQuery("KunjunganPasien").Ancestor(key).Filter("Hide =", false)
 	t := q.Run(ctx)
@@ -244,20 +245,20 @@ func getDetailPts(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Fprintln(w, err)
 		}
-		satu.TglKun = item.JamDatangRiil.Format("20-10-2006 15:04")
+		daf.TglKun = item.JamDatangRiil.Format("02-10-2006 15:04")
 		if item.GolIKI == "1" {
-			satu.IKI = true
+			daf.IKI = true
 		} else {
-			satu.IKI = false
+			daf.IKI = false
 		}
-		satu.Diagnosis = item.Diagnosis
-		satu.Dokter = item.Dokter
-		list = append(list, satu)
+		daf.Diagnosis = item.Diagnosis
+		daf.Dokter = item.Dokter
+		list = append(list, daf)
 	}
 	web.Kunjungan = list
-	web.Logout, _ = user.LogoutURL(ctx, "/")
 	web.Link = key.Encode()
 	web.Kur = ft.ListLaporan(w, r)
+	//fmt.Fprintln(w, web)
 	ft.RenderTemplate(w, r, web, "detailpts")
 }
 func test(w http.ResponseWriter, r *http.Request) {
