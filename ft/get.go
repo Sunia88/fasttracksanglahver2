@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"time"
 
 	"appengine"
 	"appengine/datastore"
@@ -57,7 +58,7 @@ func GetDatabyKey(item string, w http.ResponseWriter, r *http.Request) ListPasie
 	if err != nil {
 		fmt.Fprintln(w, "Error Fetching Data Pasien: ", err)
 	}
-
+	dataKun.JamDatangRiil = dataKun.JamDatangRiil.Add(time.Duration(8) * time.Hour)
 	dataKun.LinkID = item
 
 	return dataKun

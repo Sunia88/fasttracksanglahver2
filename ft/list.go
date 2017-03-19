@@ -37,6 +37,7 @@ func IterateList(ctx appengine.Context, w http.ResponseWriter, q *datastore.Quer
 		if err != nil {
 			fmt.Fprintln(w, "Error Fetching Data: ", err)
 		}
+		daf.JamDatang = daf.JamDatang.Add(time.Duration(8) * time.Hour)
 		jam := UbahTanggal(daf.JamDatang, daf.ShiftJaga)
 		if jam.After(monAf) == true {
 			continue
