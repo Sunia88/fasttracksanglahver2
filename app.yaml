@@ -7,7 +7,7 @@ handlers:
  
 - url: /.*
   script: _go_app
-  login: required
+  login: required lalalalala
 
 builtins:
 - remote_api: on
